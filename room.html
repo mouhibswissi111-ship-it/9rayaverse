@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sala · 9rayaverse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0a1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="9rayaverse">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body class="room-page">
+  <header class="topbar">
+    <a class="btn ghost sm" href="app.html#rooms">← Arja3</a>
+    <div>
+      <div class="logo" id="room-name" style="font-size:11px">Qa3din nconnectiw…</div>
+    </div>
+    <button class="chip gold" id="room-code" hidden title="Copi l'code"></button>
+    <div class="room-top-stats" id="top-stats"></div>
+  </header>
+
+  <div class="room-main">
+    <div class="stage" id="stage">
+      <canvas id="world" width="960" height="640" tabindex="0" aria-label="Salet 9raya virtuelle"></canvas>
+      <div class="stage-hud">
+        <span class="chip" id="hud-online">👥 0 connectés</span>
+        <span class="chip" id="hud-zone">📍 L'couloir</span>
+        <span class="chip" id="hud-timer">⏱️ --:--</span>
+      </div>
+      <div class="emote-bar" id="emote-bar"></div>
+      <div class="dpad" id="dpad">
+        <span></span><button data-key="up">▲</button><span></span>
+        <button data-key="left">◀</button><span></span><button data-key="right">▶</button>
+        <span></span><button data-key="down">▼</button><span></span>
+      </div>
+      <div class="conn" id="conn">
+        <div style="font-size:40px">🔌</div>
+        <b id="conn-title">Qa3din nod5lou lel sala…</b>
+        <p class="muted" id="conn-text" style="max-width:420px"></p>
+      </div>
+    </div>
+
+    <aside class="side">
+      <nav class="tabs" id="side-tabs">
+        <button data-side="chat" class="active">💬 Chat</button>
+        <button data-side="people">👥 Nes</button>
+        <button data-side="timer">🍅 Timer l'sala</button>
+        <button data-side="focus">⏱️ 9rayti</button>
+        <button data-side="vibes">🎧 Jaw</button>
+        <button data-side="decor" id="decor-tab" hidden>🎨 Dicor</button>
+      </nav>
+
+      <section class="side-panel chat-panel" data-sidepanel="chat">
+        <div class="chat-log" id="chat-log"></div>
+        <form class="chat-form" id="chat-form" autocomplete="off">
+          <div class="row spread">
+            <div class="seg" id="chat-scope">
+              <button type="button" data-scope="near" class="active">📍 9rib</button>
+              <button type="button" data-scope="room">📢 L'sala lkol</button>
+            </div>
+            <span class="hint">Enter ↵ tekteb · Esc temchi</span>
+          </div>
+          <div class="row">
+            <input class="input" id="chat-input" maxlength="300" placeholder="A7ki m3a elli 9rib menek…">
+            <button class="btn primary" type="submit">Ab3ath</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="side-panel" data-sidepanel="people" hidden>
+        <p class="hint">📍 akhdher = 9rib menek w yesma3 l'chat mta3 "9rib".</p>
+        <div id="people"></div>
+      </section>
+
+      <section class="side-panel" data-sidepanel="timer" hidden>
+        <div class="room-timer" id="room-timer"></div>
+        <div class="card" style="padding:14px">
+          <h3>⚙️ Réglages mta3 l'round</h3>
+          <div class="row" style="flex-wrap:nowrap">
+            <label class="field" style="flex:1"><span>9raya (min)</span><input class="input" id="rt-focus" type="number" min="1" max="120" value="25"></label>
+            <label class="field" style="flex:1"><span>Pause (min)</span><input class="input" id="rt-break" type="number" min="1" max="60" value="5"></label>
+          </div>
+          <button class="btn sm" id="rt-apply">Sajjel w 3awed l'timer</button>
+          <p class="hint mt">L'timer hedha mechtarek m3a l'kol fel sala — kima session 9raya m3a s7abek. Bech yet7seb fel tartib, lezem tkhaddem zeda <b>9rayti</b> (enzel 3la "Nod5ol m3akom").</p>
+        </div>
+      </section>
+
+      <section class="side-panel" data-sidepanel="focus" hidden>
+        <div id="room-focus"></div>
+      </section>
+
+      <section class="side-panel" data-sidepanel="vibes" hidden>
+        <div id="vibes"></div>
+      </section>
+
+      <section class="side-panel" data-sidepanel="decor" hidden>
+        <div id="decor-panel"></div>
+      </section>
+    </aside>
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/avatar.js"></script>
+  <script src="assets/js/focus.js"></script>
+  <script src="assets/js/ambience.js"></script>
+  <script src="assets/js/room.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9rayaverse — N9raw m3a ba3dhna, w nerb7ou m3a ba3dhna</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0a1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="9rayaverse">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body data-public="1">
+  <main class="auth-wrap">
+    <section class="auth-hero">
+      <span class="logo">9raya<span>verse</span></span>
+      <h1>N9raw m3a ba3dhna. <em>Nerb7ou XP.</em><br>W n9atlou l'kasla.</h1>
+      <p>Dar 9raya virtuelle lel twensa: kol d9i9a t9raha titsajjel, titrangé fel tartib, w ta3tik XP, flous w dharbet 3al ghilen. Eli ya9ra akther yerba7… w eli yakhser, nochrtou 3lih 😈</p>
+      <ul class="feature-list">
+        <li><span class="ico">🏰</span><div><b>Salat 9raya virtuelles</b><span>Temchi b avatar mte3ek w tahki m3a elli 9rib menek.</span></div></li>
+        <li><span class="ico">📚</span><div><b>Missions PDF</b><span>Habbat les cours mte3ek w 7ott objectif: kammel l'cours bech terba7.</span></div></li>
+        <li><span class="ico">⚔️</span><div><b>Tahaddi l'S7ab + Chorout</b><span>Chkoun ya9ra akther fi jom3a? L'khaser y3mel chart.</span></div></li>
+        <li><span class="ico">⏱️</span><div><b>Tartib par wileya</b><span>Tartib lyoum, hal jom3a w hal chhar — fi Tounes lkol walla fi wilaytek.</span></div></li>
+        <li><span class="ico">🔒</span><div><b>Mode Sarem</b><span>Ken tokhrej mel page, tekhsar. Risque kbir, ghnima kbira.</span></div></li>
+      </ul>
+    </section>
+
+    <section class="card auth-card">
+      <div class="seg" role="tablist">
+        <button class="active" data-mode="login">Od5ol</button>
+        <button data-mode="register">A3mel compte</button>
+      </div>
+
+      <form id="login-form" autocomplete="on">
+        <label class="field"><span>Username walla email</span><input class="input" name="login" required autocomplete="username"></label>
+        <label class="field"><span>Mot de passe</span><input class="input" name="password" type="password" required autocomplete="current-password"></label>
+        <button class="btn primary big" type="submit">Od5ol lel 9rayaverse →</button>
+      </form>
+
+      <form id="register-form" hidden autocomplete="on">
+        <label class="field"><span>Username (3–20: 7rouf, ar9am, _)</span><input class="input" name="username" required pattern="[A-Za-z0-9_]{3,20}" autocomplete="username"></label>
+        <label class="field"><span>Email</span><input class="input" name="email" type="email" required autocomplete="email"></label>
+        <label class="field"><span>Mot de passe (6 7rouf 3al a9al)</span><input class="input" name="password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label class="field"><span>Wilaytek (lel tartib)</span><select class="input" name="wilaya" id="wilaya"><option value="">— Ekhtar —</option></select></label>
+        <button class="btn primary big" type="submit">Sajjelni ✨</button>
+      </form>
+
+      <p class="form-error" id="auth-error"></p>
+    </section>
+  </main>
+
+  <script src="assets/js/common.js"></script>
+  <script>
+    'use strict';
+    const loginForm = $('#login-form');
+    const registerForm = $('#register-form');
+    const errorBox = $('#auth-error');
+    $('#wilaya').insertAdjacentHTML('beforeend', WILAYAS.map((w) => `<option>${esc(w)}</option>`).join(''));
+
+    // Already logged in? Go straight to the dashboard.
+    API.call('auth', 'me').then(() => { location.href = 'app.html'; }).catch(() => {});
+
+    $$('.seg button').forEach((btn) => btn.addEventListener('click', () => {
+      $$('.seg button').forEach((b) => b.classList.toggle('active', b === btn));
+      loginForm.hidden = btn.dataset.mode !== 'login';
+      registerForm.hidden = btn.dataset.mode !== 'register';
+      errorBox.textContent = '';
+    }));
+
+    async function submit(form, action) {
+      const button = $('button[type=submit]', form);
+      button.disabled = true;
+      errorBox.textContent = '';
+      try {
+        await API.call('auth', action, Object.fromEntries(new FormData(form)));
+        location.href = 'app.html';
+      } catch (e) {
+        errorBox.textContent = e.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    loginForm.addEventListener('submit', (e) => { e.preventDefault(); submit(loginForm, 'login'); });
+    registerForm.addEventListener('submit', (e) => { e.preventDefault(); submit(registerForm, 'register'); });
+  </script>
+</body>
+</html>

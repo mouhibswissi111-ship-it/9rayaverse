@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · 9rayaverse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0a1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="9rayaverse">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="app.html">9raya<span>verse</span></a>
+    <nav class="tabs" id="tabs">
+      <button data-tab="stats" class="active">📊 Statistiques</button>
+      <button data-tab="users">👤 Les utilisateurs</button>
+      <button data-tab="groups">👥 Jme3at</button>
+      <button data-tab="missions">📚 Cours PDF</button>
+      <button data-tab="announce">📢 I3lan</button>
+    </nav>
+    <a class="btn ghost sm" href="app.html">← Arja3 lel site</a>
+  </header>
+
+  <main class="container">
+    <div id="denied" class="card" hidden></div>
+
+    <section class="tab-panel" data-panel="stats">
+      <h2>🛠️ Lou7at l'Admin général</h2>
+      <div class="admin-stats" id="stats"></div>
+    </section>
+
+    <section class="tab-panel" data-panel="users" hidden>
+      <div class="card">
+        <div class="row spread" style="margin-bottom:12px">
+          <h2 style="margin:0">👤 Les utilisateurs</h2>
+          <input class="input" id="user-q" placeholder="🔎 Lawwej b username walla email…" style="max-width:320px">
+        </div>
+        <div class="table-wrap"><table class="lb" id="users"></table></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="groups" hidden>
+      <div class="card">
+        <h2>👥 Jme3at</h2>
+        <div class="table-wrap"><table class="lb" id="groups"></table></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="missions" hidden>
+      <div class="card">
+        <h2>📚 Les cours PDF elli thabtou</h2>
+        <p class="hint">Fasse5 ay cours mouch mnaseb (spam, 7a9 l'auteur…).</p>
+        <div class="table-wrap"><table class="lb" id="missions"></table></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="announce" hidden>
+      <div class="card" style="max-width:640px">
+        <h2>📢 I3lan lel kol</h2>
+        <p class="hint">L'i3lan yban fel dashboard mta3 kol utilisateur. Khallih fergh bech tna77ih.</p>
+        <form id="announce-form">
+          <textarea class="input" name="text" maxlength="300" rows="3" placeholder="mathalan: Bon courage lel Bac! 💪 Session spéciale lyoum 21h fel Maktbet Lil."></textarea>
+          <button class="btn primary mt" type="submit">📢 Ab3ath l'i3lan</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/avatar.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9rayaverse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0a1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="9rayaverse">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="app.html">9raya<span>verse</span></a>
+    <nav class="tabs" id="tabs">
+      <button data-tab="focus">⏱️ 9raya</button>
+      <button data-tab="missions">📚 Missions</button>
+      <button data-tab="quests">📝 Chghol</button>
+      <button data-tab="rooms">🏰 Salat</button>
+      <button data-tab="groups">👥 Jme3ti</button>
+      <button data-tab="challenges">⚔️ Tahadiyet</button>
+      <button data-tab="leaderboard">🏆 Tartib</button>
+      <button data-tab="shop">🛒 Hanout</button>
+      <button data-tab="profile">👤 Profili</button>
+    </nav>
+    <button class="btn sm primary" id="install-btn" data-install hidden>📲 Installi l'app</button>
+    <a class="btn sm warm" href="admin.html" id="admin-link" hidden>🛠️ Admin</a>
+    <button class="btn ghost sm" id="logout">Okhrej</button>
+  </header>
+
+  <main class="container">
+    <div class="card player-bar" id="player-bar"><span class="muted">Qa3din njibou l'compte mte3ek…</span></div>
+    <div class="alerts" id="alerts"></div>
+
+    <!-- 9RAYA (FOCUS) -->
+    <section class="tab-panel" data-panel="focus">
+      <div class="grid focus-grid">
+        <div class="card">
+          <h2>⏱️ Session 9raya</h2>
+          <div id="focus-timer"></div>
+        </div>
+        <div class="stack">
+          <div class="card monster-card" id="monster-card"></div>
+          <div class="card" id="stats-card"></div>
+        </div>
+      </div>
+      <div class="card mt">
+        <h2>🗂️ Ekher sessions</h2>
+        <div class="list" id="history"></div>
+      </div>
+    </section>
+
+    <!-- MISSIONS (PDF COURSES) -->
+    <section class="tab-panel" data-panel="missions" hidden>
+      <div class="grid focus-grid">
+        <div class="stack">
+          <div class="card">
+            <h2>📚 Missions mte3i</h2>
+            <p class="hint">Kol cours PDF = mission. Kol session 9raya t5tarha 3la mission tzid fel progrès mte3ha. Ki twsel lel objectif → mission kmlet w ta5ou ghnima 🎯</p>
+            <div class="list" id="mission-list"></div>
+          </div>
+          <div class="card">
+            <h2>🤝 Cours mta3 s7abek</h2>
+            <p class="hint">Les cours elli s7abek partagewhom fel jme3at mte3ek.</p>
+            <div class="list" id="shared-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>⬆️ Habbat cours jdid</h2>
+          <form id="mission-form">
+            <label class="dropzone" id="dropzone">
+              <input type="file" name="pdf" accept="application/pdf,.pdf" required>
+              <span class="big">📄</span>
+              <b id="drop-label">Ekhtar PDF walla 7ottou hna</b>
+              <span class="hint" id="drop-hint">PDF bark · max 20 Mo</span>
+            </label>
+            <label class="field"><span>Esm l'mission</span><input class="input" name="title" maxlength="100" placeholder="mathalan: Physique — Chapitre 2"></label>
+            <div class="row" style="flex-wrap:nowrap">
+              <label class="field" style="flex:1"><span>Objectif (d9aye9 9raya)</span><input class="input" name="target_minutes" type="number" min="10" max="6000" value="120"></label>
+              <label class="field" style="flex:1"><span>Date limite (ekhtiyari)</span><input class="input" name="deadline" type="date"></label>
+            </div>
+            <button class="btn primary big" type="submit">⬆️ Habbat l'cours</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHGHOL (TO-DOS) -->
+    <section class="tab-panel" data-panel="quests" hidden>
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>📝 Chghol mte3i</h2>
+          <p class="hint">9assem l'9raya mte3ek l chghol sghar. Kol wa7ed tkammlou y3tik XP, flous w yadhrob l'ghoul.</p>
+          <form id="task-form" class="row" style="flex-wrap:nowrap;margin-bottom:14px">
+            <input class="input" name="title" maxlength="120" placeholder="mathalan: n7ell 10 exercices physique" required>
+            <select class="input" name="difficulty" style="width:auto">
+              <option value="easy">Sahel</option>
+              <option value="medium">Metwassat</option>
+              <option value="hard">S3ib</option>
+            </select>
+            <button class="btn primary" type="submit">Zid</button>
+          </form>
+          <div class="list" id="task-list"></div>
+        </div>
+        <div class="card">
+          <h2>✅ Kammeltou lyoum</h2>
+          <div class="list" id="task-done"></div>
+          <h3 class="mt">Ghnima</h3>
+          <div class="row">
+            <span class="chip">Sahel: +5 XP · 1 💰 · 2 ⚔️</span>
+            <span class="chip">Metwassat: +10 XP · 2 💰 · 4 ⚔️</span>
+            <span class="chip">S3ib: +20 XP · 4 💰 · 8 ⚔️</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SALAT (ROOMS) -->
+    <section class="tab-panel" data-panel="rooms" hidden>
+      <h2>🏰 Salat 9raya virtuelles</h2>
+      <p class="muted">Temchi b WASD / ZQSD walla l'flèches, ta7ki m3a elli 9rib menek, ta3mel pomodoro m3a l'jme3a w tesma3 lo-fi.</p>
+      <div class="grid cols-3" id="room-list"></div>
+
+      <h2 class="mt">🔐 Salat privées</h2>
+      <p class="muted">Ken enti w s7abek: code, chat, w sala tzayyenha kima t7eb 🎨</p>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3 style="color:var(--text)">➕ A3mel sala privée</h3>
+          <form id="proom-create">
+            <label class="field"><span>Esm l'sala</span><input class="input" name="name" maxlength="40" required placeholder="mathalan: Bit l'Bac 🌸"></label>
+            <label class="field"><span>Style</span>
+              <select class="input" name="theme">
+                <option value="pink">🌸 Bit Wardi (nhar, cute)</option>
+                <option value="library">📚 Maktba (lil)</option>
+                <option value="cafe">☕ 9ahwa</option>
+                <option value="forest">🌲 Ghaba</option>
+              </select>
+            </label>
+            <button class="btn primary" type="submit">🔐 A3mel l'sala</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3 style="color:var(--text)">🔑 Od5ol b code sa7bek</h3>
+          <form id="proom-join" class="row" style="flex-wrap:nowrap">
+            <input class="input" name="code" maxlength="6" placeholder="AB12CD" required style="text-transform:uppercase">
+            <button class="btn primary" type="submit">Od5ol</button>
+          </form>
+          <p class="hint mt">Sa7bek ya3tik l'code mta3 salatou, w enti tod5ol direct.</p>
+        </div>
+      </div>
+      <div class="grid cols-3 mt" id="proom-list"></div>
+    </section>
+
+    <!-- JME3TI (GROUPS) -->
+    <section class="tab-panel" data-panel="groups" hidden>
+      <div id="group-detail" hidden></div>
+      <div id="group-home">
+        <div class="grid cols-2">
+          <div class="card">
+            <h2>➕ A3mel jme3a jdida</h2>
+            <form id="group-create">
+              <label class="field"><span>Esm l'jme3a</span><input class="input" name="name" maxlength="40" required placeholder="mathalan: Jme3et l'Bac 2027"></label>
+              <label class="field"><span>Description</span><input class="input" name="description" maxlength="200" placeholder="Chnowa t9raw?"></label>
+              <label class="field"><span>Objectif lyoum (d9aye9 lel wa7ed)</span><input class="input" name="daily_goal_minutes" type="number" min="10" max="960" value="120"></label>
+              <label class="switch" style="margin-bottom:14px"><input type="checkbox" name="is_public" checked> Publique (ay wa7ed ynajjem yal9aha w yod5ol)</label>
+              <button class="btn primary" type="submit">A3mel l'jme3a</button>
+            </form>
+          </div>
+          <div class="card">
+            <h2>🔑 Od5ol b code</h2>
+            <form id="group-join" class="row" style="flex-wrap:nowrap">
+              <input class="input" name="code" maxlength="6" placeholder="ABC123" required style="text-transform:uppercase">
+              <button class="btn primary" type="submit">Od5ol</button>
+            </form>
+            <h3 class="mt">🌍 Jme3at publiques</h3>
+            <div class="list" id="group-browse"></div>
+          </div>
+        </div>
+        <h2 class="mt">👥 Jme3ti</h2>
+        <div class="grid cols-3" id="group-list"></div>
+      </div>
+    </section>
+
+    <!-- TAHADIYET (CHALLENGES) -->
+    <section class="tab-panel" data-panel="challenges" hidden>
+      <div class="grid focus-grid">
+        <div class="stack" id="challenge-list"></div>
+        <div class="card">
+          <h2>⚔️ Ebda tahaddi jdid</h2>
+          <p class="hint">Elli ya9ra akther yerba7 (+100 XP, +50 flous) w ya5tar l'chart. Elli yakhser… lezem ya3mel l'chart 😈</p>
+          <form id="challenge-create">
+            <label class="field"><span>Fi ama jme3a?</span><select class="input" name="group_id" required></select></label>
+            <div class="challenge-fields"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- TARTIB (LEADERBOARD) -->
+    <section class="tab-panel" data-panel="leaderboard" hidden>
+      <div class="card">
+        <div class="row spread" style="margin-bottom:14px">
+          <h2 style="margin:0">🏆 Tartib</h2>
+          <div class="row">
+            <div class="seg" id="lb-period">
+              <button data-period="day">Lyoum</button>
+              <button data-period="week" class="active">Hal jom3a</button>
+              <button data-period="month">Hal chhar</button>
+              <button data-period="all">Lkol</button>
+            </div>
+            <select class="input" id="lb-scope" style="width:auto"><option value="0">🇹🇳 Tounes lkol</option></select>
+            <select class="input" id="lb-wilaya" style="width:auto"><option value="">📍 Ay wileya</option></select>
+          </div>
+        </div>
+        <p class="hint" id="lb-me"></p>
+        <div class="table-wrap"><table class="lb" id="lb-table"></table></div>
+      </div>
+    </section>
+
+    <!-- HANOUT (SHOP) -->
+    <section class="tab-panel" data-panel="shop" hidden>
+      <h2>🛒 Hanout</h2>
+      <p class="muted">Esrof l'flous elli rba7tha bel 9raya. L'7wayej yban3ou 3al avatar mte3ek fi kol sala.</p>
+      <div class="shop-grid" id="shop-grid"></div>
+    </section>
+
+    <!-- PROFILI -->
+    <section class="tab-panel" data-panel="profile" hidden>
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>👤 Profili</h2>
+          <div class="profile-head">
+            <span id="profile-avatar"></span>
+            <div class="stack" style="gap:8px">
+              <label class="btn primary sm" style="cursor:pointer">📸 Baddel sourti<input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp,image/gif" hidden></label>
+              <button class="btn sm ghost" id="photo-remove">🗑️ Na77i sourti</button>
+              <span class="hint">JPG, PNG, WEBP walla GIF · max 3 Mo</span>
+            </div>
+          </div>
+          <form id="profile-form">
+            <label class="field"><span>Chkoun enti? (bio)</span><textarea class="input" name="bio" maxlength="160" rows="2" placeholder="mathalan: Bac info 2027 · n7eb l'math 🤓"></textarea></label>
+            <label class="field"><span>Wilaytek</span><select class="input" name="wilaya"><option value="">— Ekhtar —</option></select></label>
+            <button class="btn primary" type="submit">💾 Sajjel</button>
+          </form>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h2>🧍 Lbes l'perso mte3ek</h2>
+            <div class="perso-editor">
+              <canvas class="perso-preview" id="perso-preview" width="340" height="340"></canvas>
+              <div id="perso-options"></div>
+            </div>
+            <button class="btn primary mt" id="perso-save">💾 Sajjel l'perso</button>
+          </div>
+          <div class="card" id="profile-stats"></div>
+          <div class="card">
+            <h2>🔑 Baddel l'mot de passe</h2>
+            <form id="password-form">
+              <label class="field"><span>L'mot de passe l'9dim</span><input class="input" name="current" type="password" required autocomplete="current-password"></label>
+              <label class="field"><span>L'mot de passe jdid</span><input class="input" name="new" type="password" minlength="6" required autocomplete="new-password"></label>
+              <button class="btn" type="submit">Baddel</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/avatar.js"></script>
+  <script src="assets/js/focus.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

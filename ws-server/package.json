@@ -1,0 +1,16 @@
+{
+  "name": "rayaverse-ws",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Real-time server for 9rayaverse virtual rooms (avatars, proximity chat, group timers)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

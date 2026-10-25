@@ -1,0 +1,16 @@
+# 9rayaverse real-time server, kept running by systemd (installed by deploy/install.sh)
+[Unit]
+Description=9rayaverse real-time server (WebSocket)
+After=network.target
+
+[Service]
+WorkingDirectory=__APP_DIR__/ws-server
+ExecStart=__NODE__ server.js
+Restart=always
+RestartSec=3
+User=www-data
+Group=www-data
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

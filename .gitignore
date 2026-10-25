@@ -1,0 +1,11 @@
+config.php
+uploads/**/*
+!uploads/.htaccess
+!uploads/*/
+!uploads/*/.htaccess
+ws-server/node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

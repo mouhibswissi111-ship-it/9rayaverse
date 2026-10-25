@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9rayaverse</title>
+  <meta name="description" content="9rayaverse — dar 9raya virtuelle lel twensa. N9raw m3a ba3dhna, nerb7ou XP w n9atlou l'kasla.">
+  <meta name="theme-color" content="#0e0a1c">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    :root { --bg: #0e0a1c; --text: #eeeaff; --muted: #a49ec9; --accent: #8b6cff; --accent2: #ff5d8f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--text);
+      background: radial-gradient(900px 500px at 10% -10%, rgba(139,108,255,.3), transparent 60%), radial-gradient(700px 400px at 110% 10%, rgba(255,93,143,.18), transparent 60%), var(--bg); }
+    .card { max-width: 420px; width: 100%; text-align: center; padding: 32px 24px; border-radius: 22px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+    img { width: 88px; height: 88px; border-radius: 22px; }
+    h1 { font-size: 22px; margin: 16px 0 8px; }
+    p { color: var(--muted); line-height: 1.5; margin: 0 0 18px; }
+    .spin { width: 34px; height: 34px; border: 4px solid rgba(255,255,255,.15); border-top-color: var(--accent2); border-radius: 50%; margin: 0 auto 8px; animation: s 0.8s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    a.btn { display: inline-block; padding: 12px 22px; border-radius: 12px; color: #fff; text-decoration: none; font-weight: 700; background: linear-gradient(135deg, var(--accent), #b36cff); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img src="icon-192.png" alt="9rayaverse">
+    <h1 id="title">9rayaverse</h1>
+    <div class="spin" id="spin"></div>
+    <p id="text">Qa3din nwasslouk lel site…</p>
+    <a class="btn" id="go" hidden>Od5ol →</a>
+  </main>
+  <script>
+    // This page lives on GitHub Pages (permanent link). The real site runs on the owner's PC
+    // through a Cloudflare tunnel whose address changes on every start; the ON script writes
+    // the current address into url.txt here, and this page forwards visitors to it.
+    const $ = (id) => document.getElementById(id);
+    const show = (title, text, link) => {
+      $('spin').hidden = true;
+      $('title').textContent = title;
+      $('text').textContent = text;
+      if (link) { $('go').href = link; $('go').hidden = false; }
+    };
+    (async () => {
+      let url = '';
+      try {
+        url = (await (await fetch('url.txt?t=' + Date.now(), { cache: 'no-store' })).text()).trim();
+      } catch { /* treated as offline below */ }
+      if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) {
+        return show('😴 9rayaverse msakker tawa', 'L\'site ykhdem ki ykoun l\'PC mta3 l\'admin ch3el. 3awed jarreb ba3d chwaya!');
+      }
+      // Quick reachability check (opaque request: succeeds if the tunnel answers at all).
+      const alive = await Promise.race([
+        fetch(url + '/manifest.webmanifest', { mode: 'no-cors', cache: 'no-store' }).then(() => true, () => false),
+        new Promise((r) => setTimeout(() => r(null), 6000)),
+      ]);
+      if (alive === false) {
+        return show('😴 9rayaverse msakker tawa', 'L\'site mouch mch3el f had l\'wa9t. 3awed jarreb ba3d chwaya!');
+      }
+      const target = url + '/' + location.hash;
+      show('🚀 Yallah!', 'Nwasslouk lel 9rayaverse…', target);
+      location.replace(target);
+    })();
+  </script>
+</body>
+</html>

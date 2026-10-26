@@ -147,6 +147,11 @@ route([
         $st = db()->prepare("UPDATE group_challenges SET dare = ?, dare_by = ?, status = 'dare_pending' WHERE id = ? AND status = 'awaiting_dare'");
         $st->execute([$dare, $uid, $c['id']]);
         if ($st->rowCount() !== 1) fail('L\'chart deja t5tar.');
+        $losers = db()->prepare("SELECT user_id FROM challenge_participants WHERE challenge_id = ? AND outcome = 'loser'");
+        $losers->execute([$c['id']]);
+        foreach ($losers->fetchAll(PDO::FETCH_COLUMN) as $lid) {
+            queue_push((int) $lid, 'challenge', '🎯 L\'chart mte3ek wsel!', $dare, '');
+        }
         respond(['challenge' => challenge_view(fetch_challenge((int) $c['id']), $uid), 'message' => '😈 L\'chart tbe3eth lel khasrin!']);
     },
 

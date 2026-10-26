@@ -9,6 +9,8 @@ route([
         if (!in_array($period, ['day', 'week', 'month', 'all'], true)) $period = 'week';
         $gid = int_param('group_id');
         $wilaya = str_param('wilaya', 30);
+        $mySchool = bool_param('my_school') ? (string) fetch_user($uid)['school'] : '';
+        if (bool_param('my_school') && $mySchool === '') fail('Ekteb l\'lycée walla l\'fac mte3ek fel Profili 9bal 🏫');
 
         $sql = "SELECT u.id, u.username, u.level, u.avatar_color, u.hat, u.photo, u.wilaya, u.look,
                        COALESCE(SUM(f.credited_seconds), 0) AS seconds
@@ -27,6 +29,10 @@ route([
             $sql .= ' AND u.wilaya = ?';
             $args[] = $wilaya;
         }
+        if ($gid <= 0 && $mySchool !== '') {
+            $sql .= ' AND u.school = ?';
+            $args[] = $mySchool;
+        }
         $sql .= ' GROUP BY u.id, u.username, u.level, u.avatar_color, u.hat, u.photo, u.wilaya, u.look';
         if ($gid <= 0) $sql .= ' HAVING seconds > 0';
         $sql .= ' ORDER BY seconds DESC, u.level DESC, u.username LIMIT 100';
@@ -43,5 +49,24 @@ route([
             if ((int) $row['id'] === $uid) $myRank = $i + 1;
         }
         respond(['period' => $period, 'rows' => $rows, 'my_rank' => $myRank]);
+    },
+
+    // Lycées / facs ranked by total study time of their students in the period.
+    'schools' => function (): void {
+        $u = require_user();
+        $period = (string) param('period', 'week');
+        if (!in_array($period, ['day', 'week', 'month', 'all'], true)) $period = 'week';
+        $st = db()->prepare(
+            "SELECT u.school, MIN(u.wilaya) AS wilaya, COUNT(DISTINCT u.id) AS students, COALESCE(SUM(f.credited_seconds), 0) AS seconds
+             FROM users u
+             JOIN focus_sessions f ON f.user_id = u.id AND f.status IN ('completed','partial') AND f.ended_at >= ?
+             WHERE u.banned = 0 AND u.school <> ''
+             GROUP BY u.school ORDER BY seconds DESC LIMIT 50"
+        );
+        $st->execute([period_start($period)]);
+        $rows = array_map(fn ($r) => ['school' => $r['school'], 'wilaya' => $r['wilaya'], 'students' => (int) $r['students'], 'seconds' => (int) $r['seconds']], $st->fetchAll());
+        $myRank = null;
+        foreach ($rows as $i => $r) if ($u['school'] !== '' && strcasecmp($r['school'], $u['school']) === 0) $myRank = $i + 1;
+        respond(['rows' => $rows, 'my_rank' => $myRank, 'my_school' => $u['school']]);
     },
 ]);

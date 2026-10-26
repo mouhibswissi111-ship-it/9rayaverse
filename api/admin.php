@@ -29,7 +29,7 @@ route([
             'missions'       => count_of('SELECT COUNT(*) FROM missions'),
             'storage_mb'     => round($bytes / 1048576, 1),
             'challenges_running' => count_of("SELECT COUNT(*) FROM group_challenges WHERE status = 'running'"),
-        ], 'announcement' => setting('announcement')]);
+        ], 'announcement' => setting('announcement'), 'bac_date' => setting('bac_date')]);
     },
 
     'users' => function (): void {
@@ -132,5 +132,13 @@ route([
         db()->prepare("INSERT INTO settings (skey, svalue) VALUES ('announcement', ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)")
             ->execute([$text]);
         respond(['message' => $text === '' ? 'L\'i3lan tna77a.' : '📢 L\'i3lan tsajjel w ywalli yban lel kol.']);
+    },
+
+    'bac_date' => function (): void {
+        $date = str_param('date', 10);
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !strtotime($date)) fail('Date mouch s7i7a (YYYY-MM-DD).');
+        db()->prepare("INSERT INTO settings (skey, svalue) VALUES ('bac_date', ?) ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)")
+            ->execute([$date]);
+        respond(['message' => '🎓 Date l\'bac tsajjlet: ' . $date]);
     },
 ]);

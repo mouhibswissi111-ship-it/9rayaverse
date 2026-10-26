@@ -22,3 +22,12 @@ define('APP_TIMEZONE', 'Africa/Tunis');
 
 define('MAX_PDF_MB', 20);
 define('MAX_IMAGE_MB', 3);
+
+// Web Push notifications. Generate a key pair with:  node ws-server/push.js --keys
+// Leave empty to switch notifications off.
+define('VAPID_PUBLIC', '');
+define('VAPID_PRIVATE', '');
+// Permanent link opened when someone taps a notification or an invite link ('' = current site).
+define('APP_HOME_URL', '');
+// Where ws-server/push.js asks PHP for the notifications to send.
+define('PUSH_API_URL', 'http://127.0.0.1/api/push.php');

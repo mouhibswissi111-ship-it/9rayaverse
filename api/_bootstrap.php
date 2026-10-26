@@ -357,6 +357,10 @@ function public_user(array $u): array
         'photo'        => photo_url($u['photo']),
         'bio'          => $u['bio'],
         'wilaya'       => $u['wilaya'],
+        'school'       => $u['school'],
+        'bac_section'  => $u['bac_section'],
+        'weekly_goal_hours' => (int) $u['weekly_goal_hours'],
+        'reminder_hour' => $u['reminder_hour'] === null ? null : (int) $u['reminder_hour'],
         'avatar_color' => $u['avatar_color'],
         'hat'          => $u['hat'],
         'look'         => clean_look($u['look']),
@@ -536,6 +540,8 @@ function finalize_challenge(array $c): void
         $outcome = $max === $min ? 'middle' : ($score === $max ? 'winner' : ($score === $min ? 'loser' : 'middle'));
         $upd->execute([$score, $rank, $outcome, $c['id'], $uid]);
         if ($outcome === 'winner') grant_rewards($uid, CHALLENGE_WIN_XP, CHALLENGE_WIN_GOLD, 0);
+        if ($max !== $min && $outcome === 'winner') queue_push($uid, 'challenge', '🏆 Rba7t "' . $c['title'] . '"!', 'Od5ol w ekhtar l\'chart lel khasrin 😈', '');
+        if ($max !== $min && $outcome === 'loser') queue_push($uid, 'challenge', '😬 Khsart "' . $c['title'] . '"', 'Elli rb7ou bech ya5tarou l\'chart mte3ek…', '');
     }
 
     // Everybody tied: nobody wins, nobody pays a dare.
@@ -613,6 +619,56 @@ function study_stats(int $uid): array
 function profile(int $uid): array
 {
     return ['user' => public_user(fetch_user($uid)), 'stats' => study_stats($uid)];
+}
+
+// ---------------------------------------------------------------------
+// Daily counters (flashcards reviewed, XP caps…)
+// ---------------------------------------------------------------------
+
+function counter_add(int $uid, string $kind, int $n = 1): int
+{
+    db()->prepare('INSERT INTO daily_counters (user_id, day, kind, n) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE n = n + VALUES(n)')
+        ->execute([$uid, today(), $kind, $n]);
+    $st = db()->prepare('SELECT n FROM daily_counters WHERE user_id = ? AND day = ? AND kind = ?');
+    $st->execute([$uid, today(), $kind]);
+    return (int) $st->fetchColumn();
+}
+
+function counter_since(int $uid, string $kind, string $sinceDate): int
+{
+    $st = db()->prepare('SELECT COALESCE(SUM(n), 0) FROM daily_counters WHERE user_id = ? AND kind = ? AND day >= ?');
+    $st->execute([$uid, $kind, $sinceDate]);
+    return (int) $st->fetchColumn();
+}
+
+// ---------------------------------------------------------------------
+// Notifications: rows queued here are sent as Web Push by ws-server/push.js
+// ---------------------------------------------------------------------
+
+function push_enabled(): bool
+{
+    return defined('VAPID_PUBLIC') && VAPID_PUBLIC !== '';
+}
+
+function has_push(int $uid): bool
+{
+    $st = db()->prepare('SELECT 1 FROM push_subscriptions WHERE user_id = ? LIMIT 1');
+    $st->execute([$uid]);
+    return (bool) $st->fetch();
+}
+
+/** Queues a notification; $throttleMinutes > 0 skips it if one of the same kind was queued recently. */
+function queue_push(int $uid, string $kind, string $title, string $body, string $url = '', int $throttleMinutes = 0): void
+{
+    if (!push_enabled() || !has_push($uid)) return;
+    if ($throttleMinutes > 0) {
+        $st = db()->prepare('SELECT 1 FROM push_queue WHERE user_id = ? AND kind = ? AND created_at >= ? LIMIT 1');
+        $st->execute([$uid, $kind, date('Y-m-d H:i:s', time() - $throttleMinutes * 60)]);
+        if ($st->fetch()) return;
+    }
+    $cut = fn (string $s, int $n): string => function_exists('mb_substr') ? mb_substr($s, 0, $n) : substr($s, 0, $n);
+    db()->prepare('INSERT INTO push_queue (user_id, kind, title, body, url, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        ->execute([$uid, $kind, $cut($title, 100), $cut($body, 200), $cut($url, 200), now()]);
 }
 
 // ---------------------------------------------------------------------

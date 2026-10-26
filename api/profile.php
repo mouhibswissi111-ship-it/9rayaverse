@@ -8,8 +8,23 @@ route([
         $bio = str_param('bio', 160);
         $wilaya = str_param('wilaya', 30);
         if ($wilaya !== '' && !in_array($wilaya, WILAYAS, true)) fail('Wileya mouch s7i7a.');
-        db()->prepare('UPDATE users SET bio = ?, wilaya = ? WHERE id = ?')->execute([$bio, $wilaya, $uid]);
+        // Lycée / fac: one spelling per school (spaces squashed; matching ignores case).
+        $school = preg_replace('/\s+/u', ' ', str_param('school', 60));
+        if ($school !== '' && strlen($school) < 3) fail('Esm l\'lycée 9sir barcha.');
+        if ($school !== '') {
+            $known = db()->prepare('SELECT school FROM users WHERE school = ? LIMIT 1');
+            $known->execute([$school]);
+            $school = (string) ($known->fetchColumn() ?: $school);
+        }
+        db()->prepare('UPDATE users SET bio = ?, wilaya = ?, school = ? WHERE id = ?')->execute([$bio, $wilaya, $school, $uid]);
         respond(profile($uid) + ['message' => '✅ Profilek tsajjel.']);
+    },
+
+    // Suggestions for the lycée field (most popular first).
+    'schools' => function (): void {
+        require_user();
+        $st = db()->query("SELECT school, COUNT(*) AS n FROM users WHERE school <> '' AND banned = 0 GROUP BY school ORDER BY n DESC LIMIT 200");
+        respond(['schools' => array_column($st->fetchAll(), 'school')]);
     },
 
     // Chibi character: skin, hair, hairColor, eyes, glasses, blush, mode (perso|photo)

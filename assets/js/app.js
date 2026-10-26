@@ -2,7 +2,7 @@
 // tahadiyet (challenges + chorout), tartib, hanout, profili.
 'use strict';
 
-const state = { profile: null, groups: [], lbPeriod: 'week', openGroup: null, groupTimer: null, liveTick: null, timer: null, challenges: [] };
+const state = { profile: null, groups: [], lbPeriod: 'week', lbKind: 'students', openGroup: null, groupTimer: null, liveTick: null, timer: null, challenges: [] };
 
 const ROOMS = [
   { id: 'library', name: 'Maktbet Lil', art: 'library', emoji: '📚', desc: 'Bureaux skoot, lampes dafya w rfouf ktob. Lel 9raya l\'s7i7a.' },
@@ -311,7 +311,7 @@ function setGroups(groups) {
 
   const scope = $('#lb-scope');
   const selected = scope.value;
-  scope.innerHTML = '<option value="0">🇹🇳 Tounes lkol</option>' + groups.map((g) => `<option value="${g.id}">👥 ${esc(g.name)}</option>`).join('');
+  scope.innerHTML = '<option value="0">🇹🇳 Tounes lkol</option><option value="school">🏫 Lycéeti / faci</option>' + groups.map((g) => `<option value="${g.id}">👥 ${esc(g.name)}</option>`).join('');
   if ([...scope.options].some((o) => o.value === selected)) scope.value = selected;
 
   const chGroup = $('#challenge-create [name=group_id]');
@@ -626,11 +626,29 @@ function setupChallenges() {
 
 // ---------- Tartib (leaderboard) ----------
 async function loadLeaderboard() {
-  const groupId = Number($('#lb-scope').value);
-  const wilayaSel = $('#lb-wilaya');
-  wilayaSel.disabled = groupId > 0;
-  const r = await API.call('leaderboard', 'get', { period: state.lbPeriod, group_id: groupId, wilaya: groupId > 0 ? '' : wilayaSel.value });
   const medals = ['🥇', '🥈', '🥉'];
+  const schools = state.lbKind === 'schools';
+  $('#lb-scope').hidden = schools;
+  $('#lb-wilaya').hidden = schools;
+  if (schools) {
+    const r = await API.call('leaderboard', 'schools', { period: state.lbPeriod });
+    $('#lb-me').textContent = !r.my_school ? '🏫 Ekteb l\'lycée walla l\'fac mte3ek fel Profili bech t3awen lycéek yetla3.'
+      : r.my_rank ? `🏫 ${r.my_school} #${r.my_rank}. Kammlou haka! 💪` : `🏫 ${r.my_school} mazel ma dhharech. 9raw bech yetla3!`;
+    $('#lb-table').innerHTML = r.rows.length ? `
+      <tr><th>Tartib</th><th>Lycée / fac</th><th>Wileya</th><th>Etalba</th><th class="time">Wa9t l'9raya</th></tr>
+      ${r.rows.map((s, i) => `
+        <tr class="${r.my_school && s.school.toLowerCase() === r.my_school.toLowerCase() ? 'me' : ''}">
+          <td class="rank">${medals[i] ? `<span style="font-size:20px">${medals[i]}</span>` : '#' + (i + 1)}</td>
+          <td><b>🏫 ${esc(s.school)}</b></td><td class="hint">${esc(s.wilaya || '—')}</td>
+          <td><span class="chip">👥 ${s.students}</span></td><td class="time">${fmtDuration(s.seconds)}</td>
+        </tr>`).join('')}` : '<tr><td class="empty">7atta lycée ma 9ra fel période hedhi. Kon enti l\'awel! 🚀</td></tr>';
+    return;
+  }
+  const scope = $('#lb-scope').value;
+  const groupId = scope === 'school' ? 0 : Number(scope);
+  const wilayaSel = $('#lb-wilaya');
+  wilayaSel.disabled = groupId > 0 || scope === 'school';
+  const r = await API.call('leaderboard', 'get', { period: state.lbPeriod, group_id: groupId, my_school: scope === 'school', wilaya: wilayaSel.disabled ? '' : wilayaSel.value });
   $('#lb-me').textContent = r.my_rank ? `Enti #${r.my_rank} fel tartib hedha. Kammel haka! 💪` : '9ra chwaya fel période hedhi bech todhhar fel tartib.';
   $('#lb-table').innerHTML = r.rows.length ? `
     <tr><th>Tartib</th><th>Etalb</th><th>Wileya</th><th>Niveau</th><th class="time">Wa9t l'9raya</th></tr>
@@ -651,6 +669,13 @@ function setupLeaderboard() {
     if (!b) return;
     state.lbPeriod = b.dataset.period;
     $$('#lb-period button').forEach((x) => x.classList.toggle('active', x === b));
+    loadLeaderboard().catch((err) => toast(err.message, 'bad'));
+  });
+  $('#lb-kind').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-kind]');
+    if (!b) return;
+    state.lbKind = b.dataset.kind;
+    $$('#lb-kind button').forEach((x) => x.classList.toggle('active', x === b));
     loadLeaderboard().catch((err) => toast(err.message, 'bad'));
   });
   ['#lb-scope', '#lb-wilaya'].forEach((s) => $(s).addEventListener('change', () => loadLeaderboard().catch((err) => toast(err.message, 'bad'))));
@@ -702,6 +727,7 @@ function renderProfileCard() {
   if (document.activeElement?.form !== form) {
     form.bio.value = u.bio || '';
     form.wilaya.value = u.wilaya || '';
+    form.school.value = u.school || '';
   }
   $('#profile-stats').innerHTML = `
     <h2>📈 Statistiques</h2>
@@ -718,6 +744,9 @@ function renderProfileCard() {
 
 function setupProfile() {
   $('#profile-form [name=wilaya]').insertAdjacentHTML('beforeend', WILAYAS.map((w) => `<option>${esc(w)}</option>`).join(''));
+  API.call('profile', 'schools').then((r) => {
+    $('#school-list').innerHTML = r.schools.map((s) => `<option value="${esc(s)}">`).join('');
+  }).catch(() => {});
   $('#profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -748,6 +777,67 @@ function setupProfile() {
       toast((await API.call('profile', 'password', Object.fromEntries(new FormData(e.target)))).message, 'good');
       e.target.reset();
     } catch (err) { toast(err.message, 'bad'); }
+  });
+}
+
+// ---------- Notifications (Web Push) ----------
+function b64ToBytes(b64) {
+  const raw = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+async function loadPushBox() {
+  const box = $('#push-box');
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const cfg = await API.call('push', 'config');
+  if (!cfg.enabled) { box.innerHTML = '<p class="hint">L\'notifications mazelou mouch mfa3lin 3al serveur.</p>'; return; }
+  if (!supported) {
+    box.innerHTML = `<p class="hint">${ios && !standalone ? '📲 3al iPhone: sobb l\'app 9bal (Partager → Sur l\'écran d\'accueil), ba3d 7ellha w fa3el l\'notifications.' : 'L\'navigateur hedha ma y9addemch notifications. Jarreb Chrome.'}</p>`;
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  const on = !!sub && cfg.subscribed;
+  const hours = [-1, 7, 8, 9, 12, 14, 16, 17, 18, 19, 20, 21, 22];
+  box.innerHTML = `
+    <p class="hint">Nfakkrouk bel 9raya, ken s7abek bdew ya9raw, w bel tahadiyet. ${Notification.permission === 'denied' ? '<b>⚠️ Mamnou3in fel navigateur: 7ellhom men l\'cadenas 🔒 7dhe l\'adresse.</b>' : ''}</p>
+    <div class="row">
+      <button class="btn ${on ? '' : 'primary'}" id="push-toggle">${on ? '🔕 Sakker' : '🔔 Fa3el l\'notifications'}</button>
+      ${on ? '<button class="btn sm ghost" id="push-test">📨 Jarreb</button>' : ''}
+    </div>
+    <label class="field mt"><span>⏰ Fakkerni kol nhar (ken ma 9ritech) m3a:</span>
+      <select class="input" id="push-hour" style="width:auto">${hours.map((h) => `<option value="${h}" ${h === cfg.reminder_hour ? 'selected' : ''}>${h < 0 ? 'Ma tfakkernich' : h + ':00'}</option>`).join('')}</select>
+    </label>`;
+  box.dataset.key = cfg.public_key;
+}
+
+function setupPushBox() {
+  $('#push-box').addEventListener('click', async (e) => {
+    const box = $('#push-box');
+    try {
+      if (e.target.id === 'push-toggle') {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub && e.target.textContent.includes('Sakker')) {
+          await API.call('push', 'unsubscribe', { endpoint: sub.endpoint });
+          await sub.unsubscribe();
+          toast('🔕 L\'notifications tsakrou.', 'info');
+        } else {
+          if (await Notification.requestPermission() !== 'granted') return toast('Lezmek ta3ti l\'idhn lel notifications.', 'bad');
+          const fresh = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(box.dataset.key) });
+          toast((await API.call('push', 'subscribe', fresh.toJSON())).message, 'good');
+        }
+        loadPushBox();
+      } else if (e.target.id === 'push-test') {
+        toast((await API.call('push', 'test')).message, 'good');
+      }
+    } catch (err) { toast(err.message || 'Ma najjamnech nfa3lou l\'notifications.', 'bad'); }
+  });
+  $('#push-box').addEventListener('change', async (e) => {
+    if (e.target.id !== 'push-hour') return;
+    try { toast((await API.call('push', 'reminder', { hour: Number(e.target.value) })).message, 'good'); } catch (err) { toast(err.message, 'bad'); }
   });
 }
 
@@ -870,7 +960,8 @@ function showTab(name) {
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'profile' && draftLook) renderPersoEditor();
-  const loaders = { leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, quests: loadTasks, missions: loadMissions, challenges: loadChallenges, rooms: loadPrivateRooms };
+  if (name === 'profile') loadPushBox().catch(() => {});
+  const loaders = { leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, quests: loadTasks, missions: loadMissions, challenges: loadChallenges, rooms: loadPrivateRooms, bac: loadBac, cards: loadDecks, focus: loadWeekly };
   loaders[name]?.().catch((e) => toast(e.message, 'bad'));
 }
 
@@ -906,11 +997,18 @@ function setupTabs() {
   setupShop();
   setupPrivateRooms();
   setupPersoEditor();
+  setupBac();
+  setupWeekly();
+  setupDecks();
+  setupPushBox();
+  loadBac().catch(() => {});
 
   state.timer = new FocusTimer($('#focus-timer'), {
     onResult: (r) => {
       if (r.profile) setProfile(r.profile); else refreshProfile();
       loadHistory().catch(() => {});
+      loadWeekly().catch(() => {});
+      loadBac().catch(() => {});
     },
   });
 

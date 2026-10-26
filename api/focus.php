@@ -87,6 +87,19 @@ route([
              VALUES (?, ?, ?, ?, ?, 'active', ?, ?)"
         )->execute([$uid, $missionId > 0 ? $missionId : null, $subject, $minutes, $strict, now(), now()]);
 
+        // Friends in my groups get "X started studying" (at most one such notification per 2 hours each).
+        if (push_enabled()) {
+            $me = fetch_user($uid);
+            $friends = db()->prepare(
+                'SELECT DISTINCT gm2.user_id FROM group_members gm1 JOIN group_members gm2 ON gm2.group_id = gm1.group_id
+                 WHERE gm1.user_id = ? AND gm2.user_id <> ? LIMIT 200'
+            );
+            $friends->execute([$uid, $uid]);
+            foreach ($friends->fetchAll(PDO::FETCH_COLUMN) as $fid) {
+                queue_push((int) $fid, 'friend', '📚 ' . $me['username'] . ' bda ya9ra', $subject . ' · ' . $minutes . ' min. Od5ol 9ra m3ah! 💪', '', 120);
+            }
+        }
+
         respond(['session' => session_view(active_session($uid)), 'events' => $events]);
     },
 

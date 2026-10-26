@@ -8,6 +8,7 @@ const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
 const { WebSocketServer, WebSocket } = require('ws');
+const { startPush } = require('./push');
 
 // ---- Config: read WS_SECRET / WS_PORT from ../config.php so they never drift ----
 function readPhpConfig() {
@@ -17,7 +18,7 @@ function readPhpConfig() {
       const m = php.match(new RegExp(`define\\(\\s*'${key}'\\s*,\\s*'?([^')]+?)'?\\s*\\)`));
       return m ? m[1] : undefined;
     };
-    return { secret: get('WS_SECRET'), port: get('WS_PORT') };
+    return { secret: get('WS_SECRET'), port: get('WS_PORT'), vapidPublic: get('VAPID_PUBLIC'), vapidPrivate: get('VAPID_PRIVATE'), pushApi: get('PUSH_API_URL') };
   } catch {
     return {};
   }
@@ -337,4 +338,10 @@ server.on('error', (err) => {
 server.listen(PORT, () => {
   console.log(`✅ 9rayaverse real-time server listening on ws://localhost:${PORT}`);
   console.log('   Keep this window open while you use the app. Press Ctrl+C to stop.');
+  startPush({
+    publicKey: process.env.VAPID_PUBLIC || phpConfig.vapidPublic,
+    privateKey: process.env.VAPID_PRIVATE || phpConfig.vapidPrivate,
+    apiUrl: process.env.PUSH_API_URL || phpConfig.pushApi,
+    secret: SECRET,
+  });
 });

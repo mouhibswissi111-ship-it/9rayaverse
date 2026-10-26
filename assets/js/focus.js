@@ -254,6 +254,7 @@ class FocusTimer {
         <label class="switch"><input type="checkbox" class="ft-strict" ${last.strict ? 'checked' : ''}> 🔒 Mode Sarem (tahaddi Flip)</label>
         <p class="hint">XP ×1.5 w flous zeyda. Ama ken tokhrej mel page akther men 10 swani, walla tsakkarha, walla to9ef 9bal l'wa9t → <b>tekhsar</b> w l'ghoul yadhrbek.</p>
       </div>
+      ${typeof randomQuote === 'function' ? `<p class="ft-quote">💬 ${esc(randomQuote())}</p>` : ''}
       <button class="btn primary big ft-start">▶ Yallah nebdew</button>`;
 
     const minInput = $('.ft-min', this.root);

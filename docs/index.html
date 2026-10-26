@@ -6,7 +6,7 @@
   <title>9rayaverse</title>
   <meta name="description" content="9rayaverse — dar 9raya virtuelle lel twensa. N9raw m3a ba3dhna, nerb7ou XP w n9atlou l'kasla.">
   <meta name="theme-color" content="#fff8f3">
-  <link rel="icon" href="icon-192.png">
+  <link rel="icon" href="icon-192.png?v=2">
   <style>
     :root { --bg: #fff8f3; --text: #3b2418; --muted: #8b6e5c; --accent: #f97316; --accent2: #ea580c; }
     * { box-sizing: border-box; }
@@ -25,7 +25,7 @@
 </head>
 <body>
   <main class="card">
-    <img src="icon-192.png" alt="9rayaverse">
+    <img src="icon-192.png?v=2" alt="9rayaverse">
     <h1 id="title">9rayaverse</h1>
     <div class="spin" id="spin"></div>
     <p id="text">Qa3din nwasslouk lel site…</p>
@@ -58,7 +58,8 @@
       if (alive === false) {
         return show('😴 9rayaverse msakker tawa', 'L\'site mouch mch3el f had l\'wa9t. 3awed jarreb ba3d chwaya!');
       }
-      const target = url + '/' + location.hash;
+      // Keep invite codes (?g=… / ?r=…) and the page (#focus…) when forwarding.
+      const target = url + '/' + (location.hash ? 'app.html' + location.search + location.hash : location.search);
       show('🚀 Yallah!', 'Nwasslouk lel 9rayaverse…', target);
       location.replace(target);
     })();

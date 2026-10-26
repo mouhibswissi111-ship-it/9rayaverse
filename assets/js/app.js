@@ -32,6 +32,7 @@ function setProfile(p) {
   state.profile = { ...state.profile, ...p };
   const u = state.profile.user;
   renderHeader(u);
+  renderSidebar();
   renderMonster(u.monster, prevMonsterHp !== undefined && u.monster.hp < prevMonsterHp);
   renderStats(state.profile.stats);
   renderProfileCard();
@@ -52,7 +53,7 @@ function renderHeader(u) {
         <div class="ah-lvl">NIVEAU ${u.level}${u.wilaya ? ` • 📍 ${esc(u.wilaya.toUpperCase())}` : ''}</div>
       </div>
       <button class="ah-ico" id="bell" aria-label="Notifications">🔔${n ? `<b class="bell-badge">${n}</b>` : ''}</button>
-      <button class="ah-ico" data-tab="profile" aria-label="Reglages">⚙️</button>
+      <button class="ah-ico" data-open-side aria-label="Menu">☰</button>
     </div>
     <div class="ah-xp"><span>⭐ N9at</span><div class="bar xp"><i style="width:${pct(u.xp, u.xp_next)}%"></i></div><small>${u.xp} / ${u.xp_next}</small></div>
     <div class="ah-pills">
@@ -1086,19 +1087,39 @@ const MORE_PAGES = [
   ['shop', 'Hanout', '<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/>', '#65a30d', '#ecfccb'],
   ['profile', 'Profili', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', '#16a34a', '#dcfce7'],
 ];
-const MORE_DEFAULT_ICON = '<span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span>Plus';
+// The 4 pages of the bottom bar, as they appear in the side menu.
+const MAIN_PAGES = [
+  ['home', 'Accueil', '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>', '#16a34a', '#dcfce7'],
+  ['focus', 'Timer', '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/>', '#16a34a', '#dcfce7'],
+  ['rooms', 'Salat', '<path d="M4 20V5M9 20V5M14 20 17 5.5l4 1L18 20M3 20h18"/>', '#0284c7', '#e0f2fe'],
+  ['challenges', 'Tahadiyet', '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 13v4M8.5 20h7M10 17h4"/>', '#ea580c', '#ffedd5'],
+];
 
-function openMore() {
-  openSheet('Pages o5rin', `<div class="more-tiles">${MORE_PAGES.map(([id, label, icon, c, cs]) =>
-    `<button data-go="${id}" style="--c:${c};--cs:${cs}" class="${state.tab === id ? 'on' : ''}"><span class="mt-ico"><svg viewBox="0 0 24 24">${icon}</svg></span><b>${label}</b></button>`).join('')}</div>`, (sheet, close) => {
-    sheet.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-go]');
-      if (!b) return;
-      navigator.vibrate?.(8);
-      close();
-      location.hash = b.dataset.go;
-    });
-  });
+// ---------- Side menu: every page + the account in its own place ----------
+// Phone: slides in from the right (☰). PC (≥ 900 px): always visible on the left.
+function renderSidebar() {
+  const box = $('#sidebar');
+  if (!box || !state.profile) return;
+  const u = state.profile.user;
+  const row = ([id, label, icon, c, cs]) =>
+    `<button class="sb-item ${state.tab === id ? 'on' : ''}" data-go="${id}" style="--c:${c};--cs:${cs}"><span class="sb-ico"><svg viewBox="0 0 24 24">${icon}</svg></span><span>${label}</span></button>`;
+  box.innerHTML = `
+    <button class="sb-me" data-go="profile" aria-label="Profili">
+      ${avatarHTML(u.avatar_color, u.hat, 'lg', u.photo, u.look)}
+      <span class="sb-who"><b>${esc(u.username)}</b><small>Niveau ${u.level}${u.wilaya ? ` • ${esc(u.wilaya)}` : ''}</small>
+        <span class="sb-xp"><i style="width:${pct(u.xp, u.xp_next)}%"></i></span></span>
+    </button>
+    <div class="sb-label">9raya</div>
+    ${MAIN_PAGES.map(row).join('')}
+    <div class="sb-label">Zid 7wayej</div>
+    ${MORE_PAGES.filter((p) => p[0] !== 'profile').map(row).join('')}
+    <div class="sb-label">L'compte</div>
+    ${row(MORE_PAGES.find((p) => p[0] === 'profile'))}
+    <button class="sb-item sb-out" id="sb-logout"><span class="sb-ico"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span><span>Okhrej</span></button>`;
+}
+
+function toggleSide(open) {
+  document.body.classList.toggle('side-open', open ?? !document.body.classList.contains('side-open'));
 }
 
 function showTab(name) {
@@ -1110,11 +1131,8 @@ function showTab(name) {
   $('#player-bar').hidden = name !== 'home'; // the account card (avatar, n9at, flous…) belongs to Accueil; other pages start clean
   renderTiles(name);
   $$('#tabs button[data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-  // "Plus" shows the page you are on (icon + name) when it is one of the other pages.
-  const more = MORE_PAGES.find((p) => p[0] === name);
-  const moreBtn = $('#more-btn');
-  moreBtn.classList.toggle('active', !!more);
-  moreBtn.innerHTML = more ? `<span class="ico"><svg viewBox="0 0 24 24">${more[2]}</svg></span>${more[1]}` : MORE_DEFAULT_ICON;
+  toggleSide(false);
+  $$('#sidebar .sb-item').forEach((b) => b.classList.toggle('on', b.dataset.go === name));
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Slide + fade like a phone app: going forward slides in from the right, going back from the left.
@@ -1139,7 +1157,16 @@ function showTab(name) {
 function setupTabs() {
   // Bottom navigation + "more pages" pills share the same data-tab buttons.
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#more-btn')) return openMore();
+    if (e.target.closest('[data-open-side]')) return toggleSide(true);
+    if (e.target.closest('#side-back')) return toggleSide(false);
+    if (e.target.closest('#sb-logout')) { API.call('auth', 'logout').finally(() => { location.href = 'index.html'; }); return; }
+    const go = e.target.closest('#sidebar [data-go]');
+    if (go) {
+      navigator.vibrate?.(8);
+      toggleSide(false);
+      location.hash = go.dataset.go;
+      return;
+    }
     const b = e.target.closest('button[data-tab]');
     if (b) {
       navigator.vibrate?.(8); // tiny haptic tick on phones that support it
@@ -1147,6 +1174,8 @@ function setupTabs() {
     }
   });
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleSide(false); });
+  renderSidebar();
   showTab(location.hash.slice(1) || 'home');
 }
 

@@ -1,0 +1,22 @@
+:root { --bg: #fff8f3; --text: #3b2418; --muted: #8b6e5c; --accent: #ea580c; --soft: #ffedd5; --border: #fde3cf; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--text); line-height: 1.7; font-size: 17px;
+  background: radial-gradient(900px 500px at 10% -10%, rgba(251,146,60,.2), transparent 60%), var(--bg); }
+header, main, footer { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; padding-bottom: 16px; }
+.brand { display: flex; align-items: center; font-weight: 900; font-size: 20px; color: var(--text); text-decoration: none; }
+.brand img { width: 34px; height: 34px; border-radius: 10px; margin-right: 8px; }
+.brand span { color: var(--accent); }
+.cta { display: inline-block; padding: 10px 18px; border-radius: 999px; color: #fff; text-decoration: none; font-weight: 800; background: linear-gradient(135deg, #fb923c, #ea580c); box-shadow: 0 8px 20px rgba(234,88,12,.3); }
+h1 { font-size: clamp(28px, 7vw, 40px); line-height: 1.15; margin: 18px 0 10px; }
+h2 { font-size: 22px; margin: 30px 0 8px; }
+p, li { color: #4a3226; }
+.lead { font-size: 19px; color: var(--muted); }
+.tip { background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--accent); border-radius: 16px; padding: 14px 16px; margin: 20px 0; }
+.box { background: linear-gradient(135deg, #fff, var(--soft)); border: 1px solid var(--border); border-radius: 22px; padding: 22px; margin: 34px 0; text-align: center; }
+.list { display: grid; gap: 12px; margin: 20px 0 40px; padding: 0; list-style: none; }
+.list a { display: block; padding: 16px 18px; background: #fff; border: 1px solid var(--border); border-radius: 18px; color: var(--text); text-decoration: none; box-shadow: 0 6px 18px rgba(234,88,12,.08); }
+.list b { display: block; font-size: 18px; }
+.list span { color: var(--muted); font-size: 15px; }
+footer { padding-top: 10px; padding-bottom: 40px; color: var(--muted); font-size: 14px; }
+a { color: #c2410c; }

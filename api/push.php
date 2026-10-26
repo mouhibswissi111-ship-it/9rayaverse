@@ -12,12 +12,6 @@ function require_sender(): void
     if ($given === '' || !hash_equals(WS_SECRET, $given)) fail('Mamnou3.', 403);
 }
 
-function home_url(string $hash = ''): string
-{
-    $base = defined('APP_HOME_URL') && APP_HOME_URL !== '' ? APP_HOME_URL : '';
-    return $base . ($hash !== '' ? '#' . $hash : '');
-}
-
 /** Daily reminder + weekly challenge announcement, queued when their hour comes. */
 function queue_scheduled(): void
 {

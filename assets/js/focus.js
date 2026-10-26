@@ -29,6 +29,12 @@ class FocusTimer {
     this.root.classList.toggle('compact', this.compact);
 
     document.addEventListener('visibilitychange', () => this.onVisibility());
+    // Back online: save a session that ended while offline right away, and tell the server we're here.
+    window.addEventListener('online', () => {
+      if (!this.session) return;
+      this.retryAt = 0;
+      if (!this.paused && this.remaining() <= 0) this.finish(); else this.ping();
+    });
     this.renderSetup();
     this.resume();
   }

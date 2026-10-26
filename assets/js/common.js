@@ -178,6 +178,137 @@ function setupLogout(button) {
   });
 }
 
+// ---------- Connection lost / back ----------
+function showOffline(off) {
+  let bar = $('.offline-bar');
+  if (off && !bar) {
+    bar = document.createElement('div');
+    bar.className = 'offline-bar';
+    bar.textContent = '📴 Ma fammech connexion. L\'timer ykammel, w nsajjlou ki trja3 l\'connexion.';
+    document.body.appendChild(bar);
+  } else if (!off && bar) {
+    bar.remove();
+    toast('📶 L\'connexion rja3et!', 'good', 2500);
+  }
+}
+window.addEventListener('offline', () => showOffline(true));
+window.addEventListener('online', () => showOffline(false));
+if (!navigator.onLine) document.addEventListener('DOMContentLoaded', () => showOffline(true));
+
+// ---------- Theme (nhar / lil) ----------
+// The page <head> applies the saved theme before drawing (no white flash); this keeps it in sync.
+function applyTheme() {
+  const t = store.get('theme', 'auto');
+  const dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('meta[name=theme-color]')?.setAttribute('content', dark ? '#1a120d' : '#fff8f3');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
+
+function setupThemeSeg(seg) {
+  if (!seg) return;
+  const mark = () => $$('button', seg).forEach((b) => b.classList.toggle('active', b.dataset.themeSet === store.get('theme', 'auto')));
+  seg.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-theme-set]');
+    if (!b) return;
+    store.set('theme', b.dataset.themeSet);
+    applyTheme();
+    mark();
+  });
+  mark();
+}
+
+// ---------- Sharing & invite links ----------
+/** Base address to share: the permanent link when the server gives one, else this site. */
+function siteHome(home) {
+  return home || location.href.replace(/[^/]*([?#].*)?$/, '');
+}
+
+/** Native share sheet on phones (WhatsApp, Messenger…), clipboard elsewhere. */
+async function shareLink(url, text) {
+  if (navigator.share) {
+    try { await navigator.share({ title: '9rayaverse', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    toast('🔗 L\'lien tcopia! Ab3athou l s7abek.', 'good');
+  } catch {
+    prompt('Copi l\'lien hedha:', url);
+  }
+}
+
+/** ?g=CODE (group) / ?r=CODE (private room) from an invite link, kept until the visitor is logged in. */
+function rememberInvite() {
+  const q = new URLSearchParams(location.search);
+  const g = (q.get('g') || '').toUpperCase();
+  const r = (q.get('r') || '').toUpperCase();
+  if (/^[A-Z0-9]{6}$/.test(g)) store.set('invite', { type: 'group', code: g });
+  else if (/^[A-Z0-9]{6}$/.test(r)) store.set('invite', { type: 'room', code: r });
+  return store.get('invite', null);
+}
+
+/**
+ * Story picture (1080x1920) for Instagram / WhatsApp status: perso + big number + link.
+ * opts: { user, big: '4h12', label: '9rit lyoum', lines: ['🔥 6 ayem mtab3in', …], home }
+ */
+async function shareStory(opts) {
+  const W = 1080, H = 1920;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const bg = g.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#fff7ed'); bg.addColorStop(0.55, '#ffd9b8'); bg.addColorStop(1, '#fb923c');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,.35)';
+  [[150, 260, 220], [930, 520, 160], [880, 1500, 260], [120, 1650, 180]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); });
+
+  await document.fonts?.ready;
+  const text = (t, x, y, size, color, weight = 800, font = 'Poppins') => {
+    g.font = `${weight} ${size}px ${font}, system-ui, sans-serif`; g.fillStyle = color; g.textAlign = 'center'; g.fillText(t, x, y);
+  };
+  g.font = '900 84px Poppins, system-ui, sans-serif';
+  const w1 = g.measureText('9raya').width;
+  const w2 = g.measureText('verse').width;
+  text('9raya', W / 2 - w2 / 2, 190, 84, '#3b2418', 900);
+  text('verse', W / 2 + w1 / 2, 190, 84, '#ea580c', 900);
+
+  // The perso, big, on a white disc.
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(W / 2, 640, 300, 0, 7); g.fill();
+  const u = opts.user;
+  const src = typeof chibiURL === 'function' && !(u.photo && u.look?.mode === 'photo') ? chibiURL(u.look, u.avatar_color, u.hat) : u.photo;
+  if (src) {
+    const img = new Image();
+    img.src = src;
+    await new Promise((r) => { img.onload = r; img.onerror = r; });
+    if (img.naturalWidth) {
+      g.save(); g.beginPath(); g.arc(W / 2, 640, 290, 0, 7); g.clip();
+      const s = 520 / Math.max(img.naturalWidth, img.naturalHeight);
+      g.imageSmoothingEnabled = !src.startsWith('data:');
+      g.drawImage(img, W / 2 - (img.naturalWidth * s) / 2, 640 - (img.naturalHeight * s) / 2, img.naturalWidth * s, img.naturalHeight * s);
+      g.restore();
+    }
+  }
+  text(u.username, W / 2, 1040, 64, '#3b2418');
+  text(opts.big, W / 2, 1290, 230, '#c2410c', 900);
+  text(opts.label, W / 2, 1385, 60, '#3b2418', 700);
+  (opts.lines || []).forEach((l, i) => text(l, W / 2, 1500 + i * 72, 48, '#5b4334', 600, 'Inter'));
+  g.fillStyle = '#fff'; g.beginPath(); g.roundRect?.(140, 1690, W - 280, 130, 65); g.fill();
+  text('Od5ol 9ra m3aya 👉 9rayaverse', W / 2, 1772, 46, '#ea580c', 800);
+
+  const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+  const file = new File([blob], '9rayaverse-story.png', { type: 'image/png' });
+  const link = siteHome(opts.home);
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], text: `${opts.label} ${opts.big} fi 9rayaverse 📚 ${link}` }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '9rayaverse-story.png';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('📸 L\'taswira t7ammlet! 7ottha fi story.', 'good');
+}
+
 // ---------- PDF viewer (stays inside the page, so strict mode keeps running) ----------
 function openPdf(url, title) {
   $('.pdf-back')?.remove();

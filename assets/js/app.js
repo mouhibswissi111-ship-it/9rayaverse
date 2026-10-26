@@ -51,8 +51,8 @@ function renderMonster(m, wasHit) {
 function renderStats(s) {
   const max = Math.max(3600, ...s.last7.map((d) => d.seconds));
   $('#stats-card').innerHTML = `
-    <h2>📊 Wa9t l'9raya</h2>
-    <div class="stat-grid">
+    <div class="row spread"><h2 style="margin:0">📊 Wa9t l'9raya</h2><button class="btn sm warm" id="story-today">📸 Partagi</button></div>
+    <div class="stat-grid mt">
       <div class="stat-box"><b>${fmtDuration(s.today)}</b><span>Lyoum</span></div>
       <div class="stat-box"><b>${fmtDuration(s.week)}</b><span>Hal jom3a</span></div>
       <div class="stat-box"><b>${fmtDuration(s.total)}</b><span>Lkol · ${s.sessions} sessions</span></div>
@@ -367,6 +367,7 @@ async function renderGroupDetail() {
       <p class="muted">${esc(group.description || '')}</p>
       <div class="row" style="margin-bottom:16px">
         <span class="muted">Code d'invitation:</span><span class="code">${esc(group.invite_code)}</span>
+        <button class="btn sm primary" id="group-invite">🔗 Ab3ath lien lel s7ab</button>
         <span class="chip">🎯 Objectif ${group.daily_goal_minutes} min/nhar</span>
         <span class="chip good"><span class="live-dot"></span> ${studying} ya9raw tawa</span>
       </div>
@@ -410,6 +411,8 @@ async function renderGroupDetail() {
     </div>`;
 
   $('#group-back').addEventListener('click', closeGroup);
+  $('#group-invite').addEventListener('click', () => shareLink(`${siteHome(state.profile.home_url)}?g=${group.invite_code}`,
+    `📚 Od5ol jme3ti "${group.name}" fi 9rayaverse w n9raw m3a ba3dhna!`));
   $('#group-leave').addEventListener('click', async () => {
     if (!confirm(`Bech tokhrej men "${group.name}"?`)) return;
     try {
@@ -855,7 +858,7 @@ function renderPrivateRooms(rooms) {
           <p>${r.is_owner ? '👑 Salatek' : `Mta3 ${esc(r.owner)}`} · 👥 ${r.members} · <span class="code" style="font-size:10px">${esc(r.code)}</span></p>
           <div class="row">
             <a class="btn primary" href="room.html?room=${esc(r.ws_id)}">Od5ol →</a>
-            <button class="btn sm ghost" data-copy="${esc(r.code)}">📋 Code</button>
+            <button class="btn sm ghost" data-invite-room="${esc(r.code)}" data-name="${esc(r.name)}">🔗 Lien</button>
             <button class="btn sm ghost" data-proom-leave="${esc(r.code)}" data-owner="${r.is_owner ? 1 : 0}">${r.is_owner ? '🗑️ Fasse5' : '🚪 Okhrej'}</button>
           </div>
         </div>
@@ -887,9 +890,9 @@ function setupPrivateRooms() {
     } catch (err) { toast(err.message, 'bad'); }
   });
   $('#proom-list').addEventListener('click', async (e) => {
-    const copy = e.target.closest('[data-copy]');
+    const invite = e.target.closest('[data-invite-room]');
     const leave = e.target.closest('[data-proom-leave]');
-    if (copy) navigator.clipboard?.writeText(copy.dataset.copy).then(() => toast('📋 L\'code tcopia!', 'good'), () => toast(copy.dataset.copy, 'info'));
+    if (invite) shareLink(`${siteHome(state.profile.home_url)}?r=${invite.dataset.inviteRoom}`, `🔐 Od5ol salti "${invite.dataset.name}" fi 9rayaverse (code ${invite.dataset.inviteRoom})`);
     if (leave) {
       const owner = leave.dataset.owner === '1';
       if (!confirm(owner ? 'Tfasse5 l\'sala hedhi lel kol?' : 'Tokhrej mel sala hedhi?')) return;
@@ -975,6 +978,27 @@ function setupTabs() {
   showTab(location.hash.slice(1) || 'focus');
 }
 
+// ---------- Invite links (?g=CODE / ?r=CODE) ----------
+async function acceptInvite() {
+  const inv = rememberInvite();
+  if (!inv) return;
+  store.set('invite', null);
+  try {
+    if (inv.type === 'group') {
+      if (state.groups.some((g) => g.invite_code === inv.code)) return;
+      const r = await API.call('groups', 'join', { code: inv.code });
+      setGroups(r.groups);
+      celebrate('🎉', 'Dkhalt lel jme3a!', 'Sa7bek 3ayatlek w tawa enti m3ahom. Yallah n9raw!');
+      location.hash = 'groups';
+      openGroup(r.group_id);
+    } else {
+      const r = await API.call('rooms', 'join', { code: inv.code });
+      toast(r.message, 'good');
+      location.href = `room.html?room=p${r.code}`;
+    }
+  } catch (err) { toast(err.message, 'bad'); }
+}
+
 // ---------- Boot ----------
 (async function init() {
   let me;
@@ -999,6 +1023,20 @@ function setupTabs() {
   setupPersoEditor();
   setupBac();
   setupWeekly();
+  setupThemeSeg($('#theme-seg'));
+  $('#stats-card').addEventListener('click', (e) => {
+    if (e.target.id !== 'story-today') return;
+    const u = state.profile.user;
+    const s = state.profile.stats;
+    const today = s.today > 0;
+    shareStory({
+      user: u,
+      home: state.profile.home_url,
+      big: fmtDuration(today ? s.today : s.week),
+      label: today ? '9rit lyoum 📚' : '9rit hal jom3a 📚',
+      lines: [`🔥 ${u.streak} ${u.streak === 1 ? 'nhar' : 'ayem'} mtab3in · ⭐ Niveau ${u.level}`, `⏱️ ${fmtDuration(s.total)} 9raya lkol`],
+    }).catch((err) => toast(err.message, 'bad'));
+  });
   setupDecks();
   setupPushBox();
   loadBac().catch(() => {});
@@ -1015,5 +1053,6 @@ function setupTabs() {
   renderRooms();
   await loadGroups().catch((e) => toast(e.message, 'bad'));
   setupTabs();
+  acceptInvite();
   loadHistory().catch((e) => toast(e.message, 'bad'));
 })();

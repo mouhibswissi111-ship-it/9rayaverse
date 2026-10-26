@@ -143,3 +143,10 @@ renderLevels();
 loadStats();
 setupAuth();
 setupInstallButton($('#install-btn'));
+
+// Came from an invite link: say so and open the sign-up sheet.
+const invite = rememberInvite();
+if (invite && /[?&][gr]=/.test(location.search)) {
+  $('.lp-badge').insertAdjacentHTML('afterend', `<div class="lp-invite">💌 Sa7bek 3ayatlek ${invite.type === 'group' ? 'lel jme3a mte3ou' : 'lel sala mte3ou'}! A3mel compte (walla od5ol) w todkhol direct.</div>`);
+  if (!location.hash) setTimeout(() => $('[data-auth="register"]').click(), 600);
+}

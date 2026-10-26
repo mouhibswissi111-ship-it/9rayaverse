@@ -645,6 +645,13 @@ function counter_since(int $uid, string $kind, string $sinceDate): int
 // Notifications: rows queued here are sent as Web Push by ws-server/push.js
 // ---------------------------------------------------------------------
 
+/** Permanent public link of the site (GitHub page) when set, used in notifications and invite links. */
+function home_url(string $hash = ''): string
+{
+    $base = defined('APP_HOME_URL') && APP_HOME_URL !== '' ? APP_HOME_URL : '';
+    return $base . ($hash !== '' ? '#' . $hash : '');
+}
+
 function push_enabled(): bool
 {
     return defined('VAPID_PUBLIC') && VAPID_PUBLIC !== '';

@@ -68,6 +68,7 @@ route([
             'announcement' => setting('announcement'),
             'alerts'       => user_alerts($uid),
             'wilayas'      => WILAYAS,
+            'home_url'     => home_url(),
         ]);
     },
 ]);

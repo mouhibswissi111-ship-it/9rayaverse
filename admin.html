@@ -7,13 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=7">
+  <link rel="stylesheet" href="assets/css/style.css?v=9">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="9rayaverse">
   <link rel="icon" href="assets/icons/favicon-32.png?v=2" sizes="32x32">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png?v=2">
+  <script>try{var t=JSON.parse(localStorage.getItem("rv.theme"))||"auto";if(t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="dark"}catch(e){}</script>
 </head>
 <body>
   <header class="topbar">
@@ -70,11 +71,19 @@
           <button class="btn primary mt" type="submit">📢 Ab3ath l'i3lan</button>
         </form>
       </div>
+      <div class="card mt" style="max-width:640px">
+        <h2>🎓 Date l'bac</h2>
+        <p class="hint">Countdown mta3 l'bac fel app ye5ou l'date hedhi (ken l'étalb ma 7attech date mte3ou). Baddelha ki tetla3 l'date l'rasmiya.</p>
+        <form id="bacdate-form" class="row" style="flex-wrap:nowrap">
+          <input class="input" type="date" name="date" required style="width:auto">
+          <button class="btn primary" type="submit">Sajjel</button>
+        </form>
+      </div>
     </section>
   </main>
 
-  <script src="assets/js/common.js?v=4"></script>
+  <script src="assets/js/common.js?v=6"></script>
   <script src="assets/js/avatar.js?v=4"></script>
-  <script src="assets/js/admin.js?v=4"></script>
+  <script src="assets/js/admin.js?v=5"></script>
 </body>
 </html>

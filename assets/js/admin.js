@@ -4,7 +4,8 @@
 let me = null;
 
 async function loadStats() {
-  const { stats: s, announcement } = await API.call('admin', 'stats');
+  const { stats: s, announcement, bac_date: bacDate } = await API.call('admin', 'stats');
+  $('#bacdate-form').date.value = bacDate || '';
   const box = (v, label) => `<div class="stat-box card"><b>${v}</b><span>${label}</span></div>`;
   $('#stats').innerHTML = [
     box(s.users, 'Utilisateurs lkol'),
@@ -134,6 +135,12 @@ const OP_CONFIRM = {
     e.preventDefault();
     try {
       toast((await API.call('admin', 'announcement', { text: e.target.text.value })).message, 'good');
+    } catch (err) { toast(err.message, 'bad'); }
+  });
+  $('#bacdate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      toast((await API.call('admin', 'bac_date', { date: e.target.date.value })).message, 'good');
     } catch (err) { toast(err.message, 'bad'); }
   });
 })();

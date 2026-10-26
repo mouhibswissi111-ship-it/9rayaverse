@@ -204,13 +204,13 @@ function confetti(count = 26) {
 function showEvents(events = []) {
   for (const e of events) {
     switch (e.type) {
-      case 'loot': toast(`✨ +${e.xp} XP · +${e.gold} flous`, 'gold'); break;
+      case 'loot': toast(`✨ +${e.xp} n9at · +${e.gold} flous`, 'gold'); break;
       case 'damage': toast(`⚔️ Darabt l'ghoul b ${e.amount}!`, 'good'); break;
-      case 'monster_defeated': celebrate(e.emoji, `Ghlabt ${e.name}!`, `Ghnima: +${e.xp} XP w +${e.gold} flous. Ghoul jdid tla3…`); break;
+      case 'monster_defeated': celebrate(e.emoji, `Ghlabt ${e.name}!`, `Ghnima: +${e.xp} n9at w +${e.gold} flous. Ghoul jdid tla3…`); break;
       case 'level_up': celebrate('⭐', `Niveau ${e.level}!`, 'Sa77tek rja3et kemla w Max sa77a +5. Kammel haka!'); break;
-      case 'mission_done': celebrate('🎯', 'Mission kmlet!', `Kammelt "${e.title}". Ghnima: +${e.xp} XP w +${e.gold} flous.`); break;
+      case 'mission_done': celebrate('🎯', 'Mission kmlet!', `Kammelt "${e.title}". Ghnima: +${e.xp} n9at w +${e.gold} flous.`); break;
       case 'hurt': toast(`💔 -${e.amount} sa77a — ${e.reason}`, 'bad', 6000); break;
-      case 'fainted': celebrate('💀', 'Tay7et!', `Khsart ${e.gold_lost} flous w l'XP mta3 l'niveau. Erta7 chwaya w 3awed.`); break;
+      case 'fainted': celebrate('💀', 'Tay7et!', `Khsart ${e.gold_lost} flous w l'n9at mta3 l'niveau. Erta7 chwaya w 3awed.`); break;
       case 'info': toast(e.text, 'info'); break;
     }
   }
@@ -239,7 +239,7 @@ function renderPlayerBar(el, user) {
         <span class="lvl">NIVEAU ${user.level}${user.wilaya ? ` · 📍 ${esc(user.wilaya)}` : ''}</span>
       </div>
       <div class="bars">
-        <div><div class="bar-label"><span>⭐ XP</span><span>${user.xp} / ${user.xp_next}</span></div><div class="bar xp"><i style="width:${pct(user.xp, user.xp_next)}%"></i></div></div>
+        <div><div class="bar-label"><span>⭐ N9at</span><span>${user.xp} / ${user.xp_next}</span></div><div class="bar xp"><i style="width:${pct(user.xp, user.xp_next)}%"></i></div></div>
         <div><div class="bar-label"><span>❤️ Sa77a</span><span>${user.hp} / ${user.max_hp}</span></div><div class="bar hp"><i style="width:${pct(user.hp, user.max_hp)}%"></i></div></div>
       </div>
     </div>
@@ -278,7 +278,7 @@ function applyTheme() {
   const t = store.get('theme', 'auto');
   const dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  $('meta[name=theme-color]')?.setAttribute('content', dark ? '#1a120d' : '#fff8f3');
+  $('meta[name=theme-color]')?.setAttribute('content', dark ? '#0f1a14' : '#f3fbf5');
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 
@@ -334,7 +334,7 @@ async function shareStory(opts) {
   c.width = W; c.height = H;
   const g = c.getContext('2d');
   const bg = g.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#fff7ed'); bg.addColorStop(0.55, '#ffd9b8'); bg.addColorStop(1, '#fb923c');
+  bg.addColorStop(0, '#f0fdf4'); bg.addColorStop(0.55, '#bbf7d0'); bg.addColorStop(1, '#4ade80');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(255,255,255,.35)';
   [[150, 260, 220], [930, 520, 160], [880, 1500, 260], [120, 1650, 180]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); });
@@ -346,8 +346,8 @@ async function shareStory(opts) {
   g.font = '900 84px Poppins, system-ui, sans-serif';
   const w1 = g.measureText('9raya').width;
   const w2 = g.measureText('verse').width;
-  text('9raya', W / 2 - w2 / 2, 190, 84, '#3b2418', 900);
-  text('verse', W / 2 + w1 / 2, 190, 84, '#ea580c', 900);
+  text('9raya', W / 2 - w2 / 2, 190, 84, '#12301f', 900);
+  text('verse', W / 2 + w1 / 2, 190, 84, '#16a34a', 900);
 
   // The perso, big, on a white disc.
   g.fillStyle = '#fff'; g.beginPath(); g.arc(W / 2, 640, 300, 0, 7); g.fill();
@@ -365,12 +365,12 @@ async function shareStory(opts) {
       g.restore();
     }
   }
-  text(u.username, W / 2, 1040, 64, '#3b2418');
-  text(opts.big, W / 2, 1290, 230, '#c2410c', 900);
-  text(opts.label, W / 2, 1385, 60, '#3b2418', 700);
-  (opts.lines || []).forEach((l, i) => text(l, W / 2, 1500 + i * 72, 48, '#5b4334', 600, 'Inter'));
+  text(u.username, W / 2, 1040, 64, '#12301f');
+  text(opts.big, W / 2, 1290, 230, '#15803d', 900);
+  text(opts.label, W / 2, 1385, 60, '#12301f', 700);
+  (opts.lines || []).forEach((l, i) => text(l, W / 2, 1500 + i * 72, 48, '#2f5340', 600, 'Inter'));
   g.fillStyle = '#fff'; g.beginPath(); g.roundRect?.(140, 1690, W - 280, 130, 65); g.fill();
-  text('Od5ol 9ra m3aya 👉 9rayaverse', W / 2, 1772, 46, '#ea580c', 800);
+  text('Od5ol 9ra m3aya 👉 9rayaverse', W / 2, 1772, 46, '#16a34a', 800);
 
   const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
   const file = new File([blob], '9rayaverse-story.png', { type: 'image/png' });

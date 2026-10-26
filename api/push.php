@@ -33,7 +33,7 @@ function queue_scheduled(): void
         $mark->execute([$today, $u['id']]);
         $alive = $u['last_study_date'] === date('Y-m-d', strtotime('-1 day')) && (int) $u['streak'] > 0;
         if ($alive) {
-            queue_push((int) $u['id'], 'reminder', '🔥 Streak mte3ek bech yet9ass!', 'Andek ' . (int) $u['streak'] . ' ayem mtab3in. 25 d9i9a 9raya bark w t7afedh 3lih 💪', home_url('focus'));
+            queue_push((int) $u['id'], 'reminder', '🔥 L\'ayem l\'mtab3in mte3ek bech yet9a3ou!', '3andek ' . (int) $u['streak'] . ' ayem mtab3in. 25 d9i9a 9raya bark w t7afedh 3lihom 💪', home_url('focus'));
         } else {
             queue_push((int) $u['id'], 'reminder', '📚 Ma 9rit chay lyoum', 'Session sghira mta3 25 d9i9a? Yallah nebdew ✨', home_url('focus'));
         }
@@ -50,7 +50,7 @@ function queue_scheduled(): void
         $mark = db()->prepare('UPDATE users SET last_weekly_notif = ? WHERE id = ?');
         foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $id) {
             $mark->execute([$week, $id]);
-            queue_push((int) $id, 'weekly', '⚔️ Tahaddi l\'jom3a jdid!', 'Tahaddi jdid tla3. Kammlou w orba7 150 XP 🏆', home_url('focus'));
+            queue_push((int) $id, 'weekly', '⚔️ Tahaddi l\'jom3a jdid!', 'Tahaddi jdid tla3. Kammlou w orba7 150 n9at 🏆', home_url('focus'));
         }
     }
 }

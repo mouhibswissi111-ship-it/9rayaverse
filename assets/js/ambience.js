@@ -4,13 +4,14 @@
 const Ambience = {
   ctx: null,
   layers: {}, // kind -> { gain, stop }
+  files: {},  // kind -> real audio file (assets/audio/<kind>.mp3), when you add one
 
   SOUNDS: [
     { kind: 'lofi', label: '🎹 Lo-fi (piano)' },
     { kind: 'rain', label: '🌧️ Mtar' },
     { kind: 'fire', label: '🔥 Kanoun' },
     { kind: 'waves', label: '🌊 Mouj l\'b7ar' },
-    { kind: 'brown', label: '🟤 Brown noise' },
+    { kind: 'brown', label: '🟤 Dhawdha khfifa' },
   ],
 
   STATIONS: [
@@ -53,8 +54,34 @@ const Ambience = {
     return f;
   },
 
+  /** Looks for optional real recordings: drop rain.mp3, fire.mp3, lofi.mp3, waves.mp3 or brown.mp3 in assets/audio/ and they replace the generated sound. */
+  probe() {
+    this.SOUNDS.forEach((s) => fetch(`assets/audio/${s.kind}.mp3`, { method: 'HEAD' }).then((r) => { if (r.ok && /audio|mpeg|octet/.test(r.headers.get('content-type') || '')) this.files[s.kind] = `assets/audio/${s.kind}.mp3`; }).catch(() => {}));
+  },
+
+  remember() {
+    store.set('ambOn', Object.keys(this.layers));
+  },
+
+  /** Starts again the sounds the student had on (used when a strict session begins, so the sound loops during the session). */
+  resumeSaved() {
+    const vol = store.get('vibes', {});
+    store.get('ambOn', []).forEach((k) => { try { this.start(k, vol[k] ?? 0.4); } catch { /* audio blocked until a tap */ } });
+    const chips = document.getElementById('amb-chips');
+    if (chips) this.renderChips(chips);
+  },
+
   start(kind, volume) {
     if (this.layers[kind]) return;
+    if (this.files[kind]) {
+      const a = new Audio(this.files[kind]);
+      a.loop = true;
+      a.volume = Math.min(1, volume);
+      a.play().catch(() => {});
+      this.layers[kind] = { gain: { gain: { set value(v) { a.volume = Math.min(1, v); } } }, stop: () => a.pause() };
+      this.remember();
+      return;
+    }
     const ctx = this.audio();
     const gain = ctx.createGain();
     gain.gain.value = volume;
@@ -129,11 +156,13 @@ const Ambience = {
     }
 
     this.layers[kind] = { gain, stop: () => { stops.forEach((s) => s()); gain.disconnect(); } };
+    this.remember();
   },
 
   stop(kind) {
     this.layers[kind]?.stop();
     delete this.layers[kind];
+    this.remember();
   },
 
   setVolume(kind, v) {
@@ -204,3 +233,5 @@ const Ambience = {
     }));
   },
 };
+
+Ambience.probe();

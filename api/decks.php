@@ -1,11 +1,11 @@
 <?php
-// Flashcards: decks of question/answer cards, spaced repetition (Leitner boxes), sharing with a group
+// Cartes: decks of question/answer cards, spaced repetition (Leitner boxes), sharing with a group
 require __DIR__ . '/_bootstrap.php';
 
 const MAX_DECKS = 50;
 const MAX_CARDS_PER_DECK = 300;
 const BOX_DAYS = [1 => 0, 2 => 1, 3 => 3, 4 => 7, 5 => 14]; // days until the next review per box
-const CARD_XP_PER_DAY = 40;                                   // max XP from cards in one day
+const CARD_XP_PER_DAY = 40;                                   // max n9at from cards in one day
 
 function own_deck(int $deckId, int $uid): array
 {

@@ -950,7 +950,7 @@ function renderTop() {
   const u = profile.user;
   $('#top-stats').innerHTML = `
     ${avatarHTML(u.avatar_color, u.hat, 'sm', u.photo, u.look)}
-    <span class="stat-pill">Nv ${u.level} <small>${u.xp}/${u.xp_next} XP</small></span>
+    <span class="stat-pill">Nv ${u.level} <small>${u.xp}/${u.xp_next} n9at</small></span>
     <span class="stat-pill">❤️ ${u.hp}<small>/${u.max_hp}</small></span>
     <span class="stat-pill">💰 ${u.gold}</span>`;
 }

@@ -1,0 +1,12 @@
+﻿Aswat 7a9i9iyin (ekhtiyari)
+
+Hott houni fichiers MP3 b hedhom l'asmé bark:
+  lofi.mp3   (musique lo-fi)
+  rain.mp3   (mtar)
+  fire.mp3   (kanoun / 9ahwa)
+  waves.mp3  (mouj l'b7ar)
+  brown.mp3  (brown noise)
+
+Kol fichier ykhdem en boucle w ya7ell mekan l'sot elli yetsan3 b l'navigateur.
+Istakhdem ken aswat bla droits (royalty-free) walla elli enti 3amaltha.
+Ken ma7ottech 7atta fichier, l'app testa3mel l'aswat elli tetsan3 wahadha (tekhdem 7atta bla internet).

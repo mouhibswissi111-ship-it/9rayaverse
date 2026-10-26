@@ -40,7 +40,7 @@ function setProfile(p) {
   $('#admin-link').hidden = u.role !== 'admin';
 }
 
-/** App header (like the prototype): avatar, name, level · wilaya, bell, gear, XP bar, flous / streak / sa77a. */
+/** App header (like the prototype): avatar, name, level · wilaya, bell, gear, n9at bar, flous / streak / sa77a. */
 function renderHeader(u) {
   const a = state.alertsData || { alerts: [] };
   const n = a.alerts.length + (a.announcement ? 1 : 0);
@@ -54,10 +54,10 @@ function renderHeader(u) {
       <button class="ah-ico" id="bell" aria-label="Notifications">🔔${n ? `<b class="bell-badge">${n}</b>` : ''}</button>
       <button class="ah-ico" data-tab="profile" aria-label="Reglages">⚙️</button>
     </div>
-    <div class="ah-xp"><span>⭐ XP</span><div class="bar xp"><i style="width:${pct(u.xp, u.xp_next)}%"></i></div><small>${u.xp} / ${u.xp_next}</small></div>
+    <div class="ah-xp"><span>⭐ N9at</span><div class="bar xp"><i style="width:${pct(u.xp, u.xp_next)}%"></i></div><small>${u.xp} / ${u.xp_next}</small></div>
     <div class="ah-pills">
       <span class="ah-pill">💰 <b>${u.gold}</b> flous</span>
-      <span class="ah-pill hot">🔥 <b>${u.streak}</b> ${u.streak === 1 ? 'nhar' : 'ayem'} streak</span>
+      <span class="ah-pill hot">🔥 <b>${u.streak}</b> ${u.streak === 1 ? 'nhar' : 'ayem'} mtab3in</span>
       <span class="ah-pill hp">❤️ <b>${u.hp}</b>/${u.max_hp}</span>
     </div>`;
 }
@@ -109,7 +109,7 @@ function openBell() {
     else items.push(['🎯', '3andek chart lezem ta3mlou!', al.dare, 'challenges']);
   }
   const w = study.weekly;
-  if (w && !w.claimed) items.push([w.progress >= w.target ? '🎁' : '⚔️', 'Tahaddi l\'jom3a', w.progress >= w.target ? 'Kammeltou! Ekhou l\'ghnima.' : `${w.title} · ${Math.min(w.progress, w.target)}/${w.target}`, 'home']);
+  if (w && !w.claimed) items.push([w.progress >= w.target ? '🎁' : '⚔️', 'Tahaddi l\'jom3a', w.progress >= w.target ? 'Kammeltou! 5odh l\'ghnima.' : `${w.title} · ${Math.min(w.progress, w.target)}/${w.target}`, 'home']);
   const b = study.bac;
   if (b && b.bac_date) {
     const d = daysUntil(b.bac_date);
@@ -133,7 +133,7 @@ function renderMonster(m, wasHit) {
     <div class="monster-name">${esc(m.name)}</div>
     <div class="bar-label"><span>Sa77et l'ghoul</span><span>${Math.max(0, m.hp)} / ${m.max_hp}</span></div>
     <div class="bar monster"><i style="width:${pct(m.hp, m.max_hp)}%"></i></div>
-    <p class="hint mt">Kol d9i9a 9raya = 1 dharba (×1.5 fel mode sarem). Ghnima: +${m.xp_reward} XP, +${m.gold_reward} 💰 · Ghilen ghlabthom: ${m.defeated}</p>`;
+    <p class="hint mt">Kol d9i9a 9raya = 1 dharba (×1.5 fel mode sarem). Ghnima: +${m.xp_reward} n9at, +${m.gold_reward} 💰 · Ghilen ghlabthom: ${m.defeated}</p>`;
 }
 
 function renderStats(s) {
@@ -191,7 +191,7 @@ async function loadHistory() {
         <div class="sub">${esc(s.started_at)} · kont 7atet ${s.planned_minutes} min</div>
       </div>
       <span class="chip">${fmtDuration(s.credited_seconds)}</span>
-      ${Number(s.xp_earned) ? `<span class="chip gold">+${s.xp_earned} XP</span>` : ''}
+      ${Number(s.xp_earned) ? `<span class="chip gold">+${s.xp_earned} n9at</span>` : ''}
       ${STATUS_CHIP[s.status] || ''}
     </div>`).join('') : '<div class="empty">Mazelt ma 9rit chay. Ebda awel session lfou9! 🚀</div>';
 }
@@ -216,7 +216,7 @@ function missionCard(m) {
         <div class="bar-label"><span>${fmtDuration(m.progress_seconds)} / ${fmtDuration(target)}</span><span>${Math.floor(p)}%</span></div>
         <div class="bar goal"><i style="width:${p}%"></i></div>
         <div class="row mt" style="gap:6px">
-          ${m.status === 'done' ? '<span class="chip good">✅ Kmlet</span>' : `<span class="chip gold">🎁 +${m.reward_xp} XP · +${m.reward_gold} 💰</span>`}
+          ${m.status === 'done' ? '<span class="chip good">✅ Kmlet</span>' : `<span class="chip gold">🎁 +${m.reward_xp} n9at · +${m.reward_gold} 💰</span>`}
           <select class="input" data-share="${m.id}" style="width:auto;padding:4px 8px;font-size:12px">${groupOptions}</select>
         </div>
       </div>
@@ -356,9 +356,9 @@ function setupTasks() {
       <form id="task-form">
         <label class="field"><span>Chnowa bech ta3mel?</span><input class="input" name="title" maxlength="120" placeholder="mathalan: n7ell 10 exercices physique" required></label>
         <div class="diff-pick">
-          <label><input type="radio" name="difficulty" value="easy"><span>Sahel<small>+5 XP</small></span></label>
-          <label><input type="radio" name="difficulty" value="medium" checked><span>Metwassat<small>+10 XP</small></span></label>
-          <label><input type="radio" name="difficulty" value="hard"><span>S3ib<small>+20 XP</small></span></label>
+          <label><input type="radio" name="difficulty" value="easy"><span>Sahel<small>+5 n9at</small></span></label>
+          <label><input type="radio" name="difficulty" value="medium" checked><span>Metwassat<small>+10 n9at</small></span></label>
+          <label><input type="radio" name="difficulty" value="hard"><span>S3ib<small>+20 n9at</small></span></label>
         </div>
         <button class="btn primary big" type="submit">➕ Zid</button>
       </form>`, (sheet, close) => {
@@ -853,7 +853,7 @@ function renderProfileCard() {
     <div class="stat-grid">
       <div class="stat-box"><b>Nv ${u.level}</b><span>Niveau</span></div>
       <div class="stat-box"><b>${fmtDuration(s.total)}</b><span>Wa9t lkol</span></div>
-      <div class="stat-box"><b>🔥 ${u.best_streak}</b><span>A7san streak</span></div>
+      <div class="stat-box"><b>🔥 ${u.best_streak}</b><span>A7san ayem mtab3in</span></div>
       <div class="stat-box"><b>${u.monster.defeated}</b><span>Ghilen ghlabthom</span></div>
       <div class="stat-box"><b>${s.sessions}</b><span>Sessions kmlou</span></div>
       <div class="stat-box"><b>💰 ${u.gold}</b><span>Flous</span></div>
@@ -1075,19 +1075,35 @@ function setupPersoEditor() {
 }
 
 // ---------- Tabs ----------
-const MAIN_TABS = ['home', 'focus', 'rooms', 'challenges'];
+// Every page is a main page now: they all live in the bottom bar (it scrolls sideways), in this order.
+const MAIN_TABS = ['home', 'focus', 'rooms', 'challenges', 'leaderboard', 'bac', 'cards', 'missions', 'groups', 'shop', 'profile'];
 
 function showTab(name) {
   if (name === 'quests') name = 'home'; // old link: the tasks now live on Accueil
   if (!$(`[data-panel="${name}"]`)) name = 'home';
-  // Bottom bar: the 4 main screens; other pages (Tartib, Profili…) keep "Accueil" lit and show a back button.
+  const prev = state.tab;
   state.tab = name;
+  document.body.dataset.page = name; // each page has its own accent color (see "v7" in style.css)
   renderTiles(name);
-  const lit = MAIN_TABS.includes(name) ? name : 'home';
-  $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === lit));
-  $('#back-home').hidden = MAIN_TABS.includes(name);
+  let activeBtn = null;
+  $$('#tabs button, #strip button').forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('active', on);
+    if (on) activeBtn = b;
+  });
+  const scroller = $('#strip .strip-scroll');
+  if (activeBtn && scroller && scroller.contains(activeBtn)) scroller.scrollTo({ left: activeBtn.offsetLeft - (scroller.clientWidth - activeBtn.offsetWidth) / 2, behavior: 'smooth' });
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Slide + fade like a phone app: going forward slides in from the right, going back from the left.
+  if (prev && prev !== name && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const order = MAIN_TABS;
+    const dir = order.indexOf(name) >= order.indexOf(prev) ? 1 : -1;
+    $(`[data-panel="${name}"]`).animate(
+      [{ opacity: 0, transform: `translateX(${dir * 34}px)` }, { opacity: 1, transform: 'translateX(0)' }],
+      { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
+  }
   if (name === 'profile' && draftLook) renderPersoEditor();
   if (name === 'profile') loadPushBox().catch(() => {});
   const loaders = {
@@ -1102,7 +1118,10 @@ function setupTabs() {
   // Bottom navigation + "more pages" pills share the same data-tab buttons.
   document.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-tab]');
-    if (b) location.hash = b.dataset.tab;
+    if (b) {
+      navigator.vibrate?.(8); // tiny haptic tick on phones that support it
+      location.hash = b.dataset.tab;
+    }
   });
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
   showTab(location.hash.slice(1) || 'home');
@@ -1118,7 +1137,7 @@ async function acceptInvite() {
       if (state.groups.some((g) => g.invite_code === inv.code)) return;
       const r = await API.call('groups', 'join', { code: inv.code });
       setGroups(r.groups);
-      celebrate('🎉', 'Dkhalt lel jme3a!', 'Sa7bek 3ayatlek w tawa enti m3ahom. Yallah n9raw!');
+      celebrate('🎉', 'Dkhalt lel jme3a!', 'Sa7bek 3ayyetlek w tawa enti m3ahom. Yallah n9raw!');
       location.hash = 'groups';
       openGroup(r.group_id);
     } else {
@@ -1144,6 +1163,7 @@ async function acceptInvite() {
   renderAlerts(me.announcement, me.alerts);
   setupLogout($('#logout'));
   setupInstallButton($('#install-btn'));
+  setupInstallButton($('#install-home'));
   setupMissions();
   setupTasks();
   setupGroups();

@@ -24,7 +24,7 @@ function weekly_list(): array
         ['metric' => 'days',     'target' => 5,   'title' => '9ra 5 ayem men 7',         'emoji' => '📅'],
         ['metric' => 'sessions', 'target' => 12,  'title' => '12 session kemla',         'emoji' => '✅'],
         ['metric' => 'strict',   'target' => 5,   'title' => '5 sessions fel mode sarem', 'emoji' => '🔒'],
-        ['metric' => 'cards',    'target' => 100, 'title' => 'Raja3 100 flashcard',      'emoji' => '🃏'],
+        ['metric' => 'cards',    'target' => 100, 'title' => 'Raja3 100 carta',      'emoji' => '🃏'],
         ['metric' => 'tasks',    'target' => 15,  'title' => 'Kammel 15 chghol',         'emoji' => '📝'],
         ['metric' => 'minutes',  'target' => 900, 'title' => '15 sa3a 9raya hal jom3a',  'emoji' => '🔥'],
         ['metric' => 'plan',     'target' => 6,   'title' => 'Kammel 6 chapitres mel programme', 'emoji' => '🎓'],

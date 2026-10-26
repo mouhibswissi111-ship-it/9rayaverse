@@ -83,7 +83,7 @@ route([
         db()->prepare('UPDATE plan_items SET done = ?, done_at = COALESCE(done_at, IF(? = 1, ?, NULL)) WHERE id = ?')
             ->execute([$done, $done, now(), $id]);
         $events = [];
-        // Max 15 rewarded chapters a day, so adding + ticking fake chapters can't farm XP.
+        // Max 15 rewarded chapters a day, so adding + ticking fake chapters can't farm n9at.
         if ($done && $row['done_at'] === null && counter_add($uid, 'plan') <= 15) {
             $events = array_merge([['type' => 'loot', 'xp' => 10, 'gold' => 3]], grant_rewards($uid, 10, 3, 0));
         }

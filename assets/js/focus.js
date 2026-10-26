@@ -109,7 +109,7 @@ class FocusTimer {
         toast('Session wfet. A9al men d9i9a, ma tsajjel chay.', 'info');
       } else {
         const res = r.result;
-        toast(`${res.status === 'completed' ? '✅ Mabrouk! Kammelt l\'session!' : '💾 Tsajjel l\'wa9t elli 9rit.'} ${res.minutes} min · +${res.xp} XP · +${res.gold} flous`, 'good', 6000);
+        toast(`${res.status === 'completed' ? '✅ Mabrouk! Kammelt l\'session!' : '💾 Tsajjel l\'wa9t elli 9rit.'} ${res.minutes} min · +${res.xp} n9at · +${res.gold} flous`, 'good', 6000);
       }
       showEvents(r.events);
       this.onResult(r);
@@ -157,6 +157,8 @@ class FocusTimer {
   // ---------- local state ----------
   begin(session) {
     this.session = session;
+    // Mode Sarem: the sounds the student chose keep looping during the whole session.
+    if (session.strict && typeof Ambience !== 'undefined') Ambience.resumeSaved();
     this.applyTiming(session);
     this.renderRunning();
     clearInterval(this.tickTimer);
@@ -258,7 +260,7 @@ class FocusTimer {
       <div class="ft-custom">Wa9t e5er: <input class="input ft-min" type="number" min="1" max="180" value="${Number(last.minutes) || 25}"> d9aye9</div>
       <div class="ft-strict-box">
         <label class="switch"><input type="checkbox" class="ft-strict" ${last.strict ? 'checked' : ''}> 🔒 Mode Sarem (tahaddi Flip)</label>
-        <p class="hint">XP ×1.5 w flous zeyda. Ama ken tokhrej mel page akther men 10 swani, walla tsakkarha, walla to9ef 9bal l'wa9t → <b>tekhsar</b> w l'ghoul yadhrbek.</p>
+        <p class="hint">n9at ×1.5 w flous zeyda. Ama ken tokhrej mel page akther men 10 swani, walla tsakkarha, walla to9ef 9bal l'wa9t → <b>tekhsar</b> w l'ghoul yadhrbek.</p>
       </div>
       ${typeof randomQuote === 'function' ? `<p class="ft-quote">💬 ${esc(randomQuote())}</p>` : ''}
       <button class="btn primary big ft-start">▶ Yallah nebdew</button>`;
@@ -287,7 +289,7 @@ class FocusTimer {
         <div class="ring">
           <svg viewBox="0 0 200 200" aria-hidden="true">
             <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="${s.strict ? '#f97316' : '#fbbf24'}"/><stop offset="1" stop-color="${s.strict ? '#dc2626' : '#ea580c'}"/>
+              <stop offset="0" stop-color="${s.strict ? '#f97316' : '#86efac'}"/><stop offset="1" stop-color="${s.strict ? '#dc2626' : '#16a34a'}"/>
             </linearGradient></defs>
             <circle class="ring-bg" cx="100" cy="100" r="90"/>
             <circle class="ring-fg" cx="100" cy="100" r="90" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/>

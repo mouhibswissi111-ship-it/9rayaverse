@@ -385,7 +385,7 @@ function public_user(array $u): array
 }
 
 /**
- * Adds XP/gold and deals damage to the user's monster. Handles monster kills
+ * Adds n9at/gold and deals damage to the user's monster. Handles monster kills
  * (bonus loot, next monster) and level-ups. Returns a list of events for the UI.
  */
 function grant_rewards(int $uid, int $xp, int $gold, int $damage): array
@@ -434,7 +434,7 @@ function grant_rewards(int $uid, int $xp, int $gold, int $damage): array
     return $events;
 }
 
-/** The monster hits back. At 0 HP the user faints: loses half their gold and this level's XP. */
+/** The monster hits back. At 0 HP the user faints: loses half their gold and this level's n9at. */
 function hurt_user(int $uid, int $amount, string $reason): array
 {
     $u = fetch_user($uid);
@@ -622,7 +622,7 @@ function profile(int $uid): array
 }
 
 // ---------------------------------------------------------------------
-// Daily counters (flashcards reviewed, XP caps…)
+// Daily counters (cartes reviewed, n9at caps…)
 // ---------------------------------------------------------------------
 
 function counter_add(int $uid, string $kind, int $n = 1): int

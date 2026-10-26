@@ -1,5 +1,5 @@
 // Study tools on the dashboard: Bac countdown + programme checklist, weekly auto-challenge,
-// flashcards (Leitner review + quiz). Uses state / setProfile from app.js.
+// cartes (Leitner review + quiz). Uses state / setProfile from app.js.
 'use strict';
 
 const study = { bac: null, weekly: null, decks: null, deck: null, cards: [] };
@@ -163,12 +163,12 @@ function renderWeekly() {
         <h2 style="margin:4px 0 2px">${esc(w.emoji)} ${esc(w.title)}</h2>
         <span class="hint">Ba9i ${fmtLeft(w.ends_in)} · ${w.winners} kammlouh</span>
       </div>
-      <span class="chip gold">🎁 +${w.xp} XP · +${w.gold} 💰</span>
+      <span class="chip gold">🎁 +${w.xp} n9at · +${w.gold} 💰</span>
     </div>
     <div class="bar-label mt"><span>${Math.min(w.progress, w.target)} / ${w.target}</span><span>${Math.floor(pct(w.progress, w.target))}%</span></div>
     <div class="bar goal"><i style="width:${pct(w.progress, w.target)}%"></i></div>
     ${w.claimed ? '<p class="hint mt">✅ Rba7tou! Tahaddi jdid nhar l\'ethnin.</p>'
-      : done ? '<button class="btn warm big mt" id="weekly-claim">🏆 Ekhou l\'ghnima</button>' : ''}`;
+      : done ? '<button class="btn warm big mt" id="weekly-claim">🏆 5odh l\'ghnima</button>' : ''}`;
 }
 
 async function loadWeekly() {
@@ -185,12 +185,12 @@ function setupWeekly() {
       renderWeekly();
       showEvents(r.events);
       setProfile(r.profile);
-      celebrate('🏆', 'Rba7t tahaddi l\'jom3a!', `+${r.weekly.xp} XP w +${r.weekly.gold} flous. Partagi l'5bar m3a s7abek!`);
+      celebrate('🏆', 'Rba7t tahaddi l\'jom3a!', `+${r.weekly.xp} n9at w +${r.weekly.gold} flous. Partagi l'5bar m3a s7abek!`);
     } catch (err) { toast(err.message, 'bad'); }
   });
 }
 
-// ---------- Flashcards ----------
+// ---------- Cartes ----------
 /** Only the big moments: one toast per card would be too noisy. */
 function showCardEvents(events = []) {
   showEvents(events.filter((e) => e.type === 'level_up' || e.type === 'monster_defeated'));
@@ -208,7 +208,7 @@ function renderDecks(r) {
       <div class="bar goal"><i style="width:${pct(d.learned, d.cards)}%"></i></div>
       <div class="row" style="gap:6px">
         <button class="btn sm primary" data-review="${d.id}" ${d.cards ? '' : 'disabled'}>▶ Raja3${d.due ? ` (${d.due})` : ''}</button>
-        <button class="btn sm" data-quiz="${d.id}" ${d.cards >= 4 ? '' : 'disabled title="Lezem 4 cartes 3al a9al"'}>🎯 Quiz</button>
+        <button class="btn sm" data-quiz="${d.id}" ${d.cards >= 4 ? '' : 'disabled title="Lezem 4 cartes 3al a9al"'}>🎯 Imti7an</button>
         <button class="btn sm ghost" data-deck-open="${d.id}">✏️ Cartes</button>
       </div>
       <div class="row" style="gap:6px">
@@ -252,7 +252,7 @@ function renderDeckDetail() {
       <div class="row spread">
         <button class="btn ghost sm" data-deck-back>← Arja3</button>
         <div class="row"><button class="btn sm primary" data-review="${d.id}" ${study.cards.length ? '' : 'disabled'}>▶ Raja3</button>
-        <button class="btn sm" data-quiz="${d.id}" ${study.cards.length >= 4 ? '' : 'disabled'}>🎯 Quiz</button></div>
+        <button class="btn sm" data-quiz="${d.id}" ${study.cards.length >= 4 ? '' : 'disabled'}>🎯 Imti7an</button></div>
       </div>
       <h2 class="mt" style="font-size:1.3rem">🃏 ${esc(d.title)}</h2>
       <form id="card-add" class="card-form">
@@ -309,7 +309,7 @@ async function startPlayer(deckId, mode) {
       return;
     }
     const c = cards[i];
-    const head = `<div class="player-top"><span>${mode === 'quiz' ? '🎯 Quiz' : '🃏 Mraj3a'} · ${i + 1}/${cards.length}</span><button class="btn ghost sm" data-p-close>✕</button></div>
+    const head = `<div class="player-top"><span>${mode === 'quiz' ? '🎯 Imti7an' : '🃏 Mraj3a'} · ${i + 1}/${cards.length}</span><button class="btn ghost sm" data-p-close>✕</button></div>
       <div class="bar goal"><i style="width:${pct(i, cards.length)}%"></i></div>`;
     if (mode === 'quiz') {
       const wrong = all.filter((x) => x.id !== c.id && x.back !== c.back).sort(() => Math.random() - 0.5).slice(0, 3);

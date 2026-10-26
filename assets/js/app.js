@@ -1075,8 +1075,31 @@ function setupPersoEditor() {
 }
 
 // ---------- Tabs ----------
-// Every page is a main page now: they all live in the bottom bar (it scrolls sideways), in this order.
+// Bottom bar: 4 tabs + "Plus", which opens a sheet with big colored tiles for the other pages (order = slide direction).
 const MAIN_TABS = ['home', 'focus', 'rooms', 'challenges', 'leaderboard', 'bac', 'cards', 'missions', 'groups', 'shop', 'profile'];
+const MORE_PAGES = [
+  ['leaderboard', 'Tartib', '<path d="M5 21V10M12 21V4M19 21v-8M3 21h18"/>', '#d97706', '#fef3c7'],
+  ['bac', 'Imti7ani', '<path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5M22 9v6"/>', '#7c3aed', '#ede9fe'],
+  ['cards', 'Cartes', '<rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 3.5h12a2 2 0 0 1 2 2V17"/>', '#0d9488', '#ccfbf1'],
+  ['missions', 'Missions', '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>', '#4f46e5', '#e0e7ff'],
+  ['groups', 'Jme3ti', '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>', '#0891b2', '#cffafe'],
+  ['shop', 'Hanout', '<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/>', '#65a30d', '#ecfccb'],
+  ['profile', 'Profili', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', '#16a34a', '#dcfce7'],
+];
+const MORE_DEFAULT_ICON = '<span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span>Plus';
+
+function openMore() {
+  openSheet('Pages o5rin', `<div class="more-tiles">${MORE_PAGES.map(([id, label, icon, c, cs]) =>
+    `<button data-go="${id}" style="--c:${c};--cs:${cs}" class="${state.tab === id ? 'on' : ''}"><span class="mt-ico"><svg viewBox="0 0 24 24">${icon}</svg></span><b>${label}</b></button>`).join('')}</div>`, (sheet, close) => {
+    sheet.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-go]');
+      if (!b) return;
+      navigator.vibrate?.(8);
+      close();
+      location.hash = b.dataset.go;
+    });
+  });
+}
 
 function showTab(name) {
   if (name === 'quests') name = 'home'; // old link: the tasks now live on Accueil
@@ -1084,15 +1107,14 @@ function showTab(name) {
   const prev = state.tab;
   state.tab = name;
   document.body.dataset.page = name; // each page has its own accent color (see "v7" in style.css)
+  $('#player-bar').hidden = name !== 'home'; // the account card (avatar, n9at, flous…) belongs to Accueil; other pages start clean
   renderTiles(name);
-  let activeBtn = null;
-  $$('#tabs button, #strip button').forEach((b) => {
-    const on = b.dataset.tab === name;
-    b.classList.toggle('active', on);
-    if (on) activeBtn = b;
-  });
-  const scroller = $('#strip .strip-scroll');
-  if (activeBtn && scroller && scroller.contains(activeBtn)) scroller.scrollTo({ left: activeBtn.offsetLeft - (scroller.clientWidth - activeBtn.offsetWidth) / 2, behavior: 'smooth' });
+  $$('#tabs button[data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  // "Plus" shows the page you are on (icon + name) when it is one of the other pages.
+  const more = MORE_PAGES.find((p) => p[0] === name);
+  const moreBtn = $('#more-btn');
+  moreBtn.classList.toggle('active', !!more);
+  moreBtn.innerHTML = more ? `<span class="ico"><svg viewBox="0 0 24 24">${more[2]}</svg></span>${more[1]}` : MORE_DEFAULT_ICON;
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Slide + fade like a phone app: going forward slides in from the right, going back from the left.
@@ -1117,6 +1139,7 @@ function showTab(name) {
 function setupTabs() {
   // Bottom navigation + "more pages" pills share the same data-tab buttons.
   document.addEventListener('click', (e) => {
+    if (e.target.closest('#more-btn')) return openMore();
     const b = e.target.closest('button[data-tab]');
     if (b) {
       navigator.vibrate?.(8); // tiny haptic tick on phones that support it

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=18">
+  <link rel="stylesheet" href="assets/css/style.css?v=21">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#f3fbf5">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,21 +29,13 @@
       <button data-tab="focus"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/></svg></span>Timer</button>
       <button data-tab="rooms"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V5M9 20V5M14 20 17 5.5l4 1L18 20M3 20h18"/></svg></span>Salat</button>
       <button data-tab="challenges"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 13v4M8.5 20h7M10 17h4"/></svg></span>Tahadiyet</button>
-      <button data-tab="leaderboard"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 21V10M12 21V4M19 21v-8M3 21h18"/></svg></span>Tartib</button>
+      <button id="more-btn" aria-label="Plus"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span>Plus</button>
     </div>
   </nav>
 
   <main class="container">
     <!-- Header like the prototype: avatar, level, n9at, flous, streak -->
     <div class="app-head" id="player-bar"><span class="muted">Qa3din njibou l'compte mte3ek…</span></div>
-    <nav class="page-strip" id="strip" aria-label="Pages o5rin"><div class="strip-scroll">
-      <button data-tab="bac"><span class="ico"><svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></svg></span>Imti7ani</button>
-      <button data-tab="cards"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 3.5h12a2 2 0 0 1 2 2V17"/></svg></span>Cartes</button>
-      <button data-tab="missions"><span class="ico"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/></svg></span>Missions</button>
-      <button data-tab="groups"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/></svg></span>Jme3ti</button>
-      <button data-tab="shop"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Hanout</button>
-      <button data-tab="profile"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>Profili</button>
-    </div></nav>
     <button class="back-home" data-tab="home" id="back-home" hidden>← Accueil</button>
     <div class="alerts" id="alerts"></div>
 
@@ -387,6 +379,6 @@
   <script src="assets/js/bac-data.js?v=11"></script>
   <script src="assets/js/focus.js?v=18"></script>
   <script src="assets/js/study.js?v=13"></script>
-  <script src="assets/js/app.js?v=24"></script>
+  <script src="assets/js/app.js?v=28"></script>
 </body>
 </html>

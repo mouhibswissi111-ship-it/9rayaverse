@@ -31,11 +31,68 @@ function setProfile(p) {
   const prevMonsterHp = state.profile?.user.monster.hp;
   state.profile = { ...state.profile, ...p };
   const u = state.profile.user;
-  renderPlayerBar($('#player-bar'), u);
+  renderHeader(u);
   renderMonster(u.monster, prevMonsterHp !== undefined && u.monster.hp < prevMonsterHp);
   renderStats(state.profile.stats);
   renderProfileCard();
+  renderHero(u, state.profile.stats);
   $('#admin-link').hidden = u.role !== 'admin';
+}
+
+/** App header (like the prototype): avatar, name, level · wilaya, bell, gear, XP bar, flous / streak / sa77a. */
+function renderHeader(u) {
+  const a = state.alertsData || { alerts: [] };
+  const n = a.alerts.length + (a.announcement ? 1 : 0);
+  $('#player-bar').innerHTML = `
+    <div class="ah-top">
+      <button class="ah-me" data-tab="profile" aria-label="Profili">${avatarHTML(u.avatar_color, u.hat, 'lg', u.photo, u.look)}</button>
+      <div class="ah-who">
+        <div class="ah-name"><span>${esc(u.username)}</span>${u.role === 'admin' ? '<em>🛠️ Admin</em>' : ''}</div>
+        <div class="ah-lvl">NIVEAU ${u.level}${u.wilaya ? ` • 📍 ${esc(u.wilaya.toUpperCase())}` : ''}</div>
+      </div>
+      <button class="ah-ico" id="bell" aria-label="Notifications">🔔${n ? `<b class="bell-badge">${n}</b>` : ''}</button>
+      <button class="ah-ico" data-tab="profile" aria-label="Reglages">⚙️</button>
+    </div>
+    <div class="ah-xp"><span>⭐ XP</span><div class="bar xp"><i style="width:${pct(u.xp, u.xp_next)}%"></i></div><small>${u.xp} / ${u.xp_next}</small></div>
+    <div class="ah-pills">
+      <span class="ah-pill">💰 <b>${u.gold}</b> flous</span>
+      <span class="ah-pill hot">🔥 <b>${u.streak}</b> ${u.streak === 1 ? 'nhar' : 'ayem'} streak</span>
+      <span class="ah-pill hp">❤️ <b>${u.hp}</b>/${u.max_hp}</span>
+    </div>`;
+}
+
+/** Three big tiles on top of the dashboard: streak, total study time, level. */
+function renderHero(u, s) {
+  const tiles = [['🔥', u.streak, u.streak === 1 ? 'nhar mtab3in' : 'ayem mtab3in', 'orange'], ['📚', fmtDuration(s.total), 'wa9t lkol', 'sky'], ['🏆', `Nv ${u.level}`, 'niveau', 'gold']];
+  $('#hero-tiles').innerHTML = tiles.map(([e, v, l, c]) => `<div class="hero-tile ${c}"><span class="e">${e}</span><b>${esc(v)}</b><small>${l}</small></div>`).join('');
+}
+
+// ---------- Bell: everything waiting for you in one sheet ----------
+function openBell() {
+  const items = [];
+  const a = state.alertsData || { alerts: [] };
+  if (a.announcement) items.push(['📢', 'I3lan mel admin', a.announcement, '']);
+  for (const al of a.alerts) {
+    if (al.status === 'awaiting_dare' && al.outcome === 'winner') items.push(['🏆', `Rba7t "${al.title}"!`, 'Ekhtar l\'chart lel khasrin 😈', 'challenges']);
+    else if (al.status === 'awaiting_dare') items.push(['😬', `Khsart "${al.title}"`, 'Nestannew elli rb7ou ya5tarou l\'chart.', 'challenges']);
+    else items.push(['🎯', '3andek chart lezem ta3mlou!', al.dare, 'challenges']);
+  }
+  const w = study.weekly;
+  if (w && !w.claimed) items.push([w.progress >= w.target ? '🎁' : '⚔️', 'Tahaddi l\'jom3a', w.progress >= w.target ? 'Kammeltou! Ekhou l\'ghnima.' : `${w.title} · ${Math.min(w.progress, w.target)}/${w.target}`, 'home']);
+  const b = study.bac;
+  if (b && b.bac_date) {
+    const d = daysUntil(b.bac_date);
+    if (d > 0 && d <= 120) items.push(['🎓', `${d} nhar ba9i lel ${BAC_SECTIONS[b.section]?.exam || 'imti7an'}`, `${bacProgress(b.items).pct}% mel programme`, 'bac']);
+  }
+  if (state.profile.user.hp <= 15) items.push(['💔', 'Sa77tek dh3ifa', `${state.profile.user.hp} / ${state.profile.user.max_hp}. Echri dwe men l'Hanout.`, 'shop']);
+  openSheet('🔔 Notifications', items.length
+    ? `<div class="notif-list">${items.map(([e, t, d, go]) => `<button class="notif" ${go ? `data-go="${go}"` : ''}><span class="e">${e}</span><span class="grow"><b>${esc(t)}</b><small>${esc(d)}</small></span></button>`).join('')}</div>`
+    : '<div class="empty">Kol chay 9rit 👏 Ma fammech jdid.</div>', (sheet, close) => {
+    sheet.addEventListener('click', (e) => {
+      const n = e.target.closest('[data-go]');
+      if (n) { close(); location.hash = n.dataset.go; }
+    });
+  });
 }
 
 function renderMonster(m, wasHit) {
@@ -70,6 +127,8 @@ async function refreshProfile() {
 
 // ---------- Alerts (announcement + dares waiting on me) ----------
 function renderAlerts(announcement, alerts = []) {
+  state.alertsData = { announcement, alerts };
+  if (state.profile) renderHeader(state.profile.user); // refreshes the bell badge
   const parts = [];
   if (announcement) parts.push(`<div class="alert announce"><span class="ico">📢</span><div class="grow"><b>I3lan mel admin</b><div>${esc(announcement)}</div></div></div>`);
   for (const a of alerts) {
@@ -259,14 +318,28 @@ async function loadTasks() {
 }
 
 function setupTasks() {
-  $('#task-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    try {
-      renderTasks(await API.call('tasks', 'add', Object.fromEntries(new FormData(form))));
-      form.reset();
+  $('#task-add').addEventListener('click', () => {
+    openSheet('📝 Chghol jdid', `
+      <form id="task-form">
+        <label class="field"><span>Chnowa bech ta3mel?</span><input class="input" name="title" maxlength="120" placeholder="mathalan: n7ell 10 exercices physique" required></label>
+        <div class="diff-pick">
+          <label><input type="radio" name="difficulty" value="easy"><span>Sahel<small>+5 XP</small></span></label>
+          <label><input type="radio" name="difficulty" value="medium" checked><span>Metwassat<small>+10 XP</small></span></label>
+          <label><input type="radio" name="difficulty" value="hard"><span>S3ib<small>+20 XP</small></span></label>
+        </div>
+        <button class="btn primary big" type="submit">➕ Zid</button>
+      </form>`, (sheet, close) => {
+      const form = $('#task-form', sheet);
       form.title.focus();
-    } catch (err) { toast(err.message, 'bad'); }
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          renderTasks(await API.call('tasks', 'add', Object.fromEntries(new FormData(form))));
+          close();
+          toast('📝 Chghol tzad!', 'good');
+        } catch (err) { toast(err.message, 'bad'); }
+      });
+    });
   });
   $('#task-list').addEventListener('click', async (e) => {
     const done = e.target.closest('[data-complete]');
@@ -314,8 +387,6 @@ function setGroups(groups) {
   scope.innerHTML = '<option value="0">🇹🇳 Tounes lkol</option><option value="school">🏫 Lycéeti / faci</option>' + groups.map((g) => `<option value="${g.id}">👥 ${esc(g.name)}</option>`).join('');
   if ([...scope.options].some((o) => o.value === selected)) scope.value = selected;
 
-  const chGroup = $('#challenge-create [name=group_id]');
-  chGroup.innerHTML = groups.length ? groups.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join('') : '<option value="">— A3mel jme3a 9bal —</option>';
   renderRooms();
 }
 
@@ -582,8 +653,17 @@ async function loadChallenges() {
 }
 
 function setupChallenges() {
-  $('#challenge-create .challenge-fields').innerHTML = challengeFields();
-  bindChallengeForm($('#challenge-create'), () => loadChallenges().catch(() => {}));
+  $('#challenge-new').addEventListener('click', () => {
+    if (!state.groups.length) return toast('A3mel walla od5ol jme3a 9bal (tab Jme3ti) 👥', 'bad');
+    openSheet('⚔️ Tahaddi jdid', `
+      <form id="challenge-create">
+        <label class="field"><span>Fi ama jme3a?</span><select class="input" name="group_id" required>
+          ${state.groups.map((g) => `<option value="${g.id}">${esc(g.name)}</option>`).join('')}</select></label>
+        ${challengeFields()}
+      </form>`, (sheet, close) => {
+      bindChallengeForm($('#challenge-create', sheet), () => { close(); loadChallenges().catch(() => {}); });
+    });
+  });
 
   // One delegated handler for challenge cards in both the Tahadiyet tab and group details.
   document.addEventListener('click', async (e) => {
@@ -957,14 +1037,24 @@ function setupPersoEditor() {
 }
 
 // ---------- Tabs ----------
+const MAIN_TABS = ['home', 'focus', 'rooms', 'challenges'];
+
 function showTab(name) {
-  if (!$(`[data-panel="${name}"]`)) name = 'focus';
-  $$('button[data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  if (name === 'quests') name = 'home'; // old link: the tasks now live on Accueil
+  if (!$(`[data-panel="${name}"]`)) name = 'home';
+  // Bottom bar: the 4 main screens; other pages (Tartib, Profili…) keep "Accueil" lit and show a back button.
+  const lit = MAIN_TABS.includes(name) ? name : 'home';
+  $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === lit));
+  $('#back-home').hidden = MAIN_TABS.includes(name);
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'profile' && draftLook) renderPersoEditor();
   if (name === 'profile') loadPushBox().catch(() => {});
-  const loaders = { leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, quests: loadTasks, missions: loadMissions, challenges: loadChallenges, rooms: loadPrivateRooms, bac: loadBac, cards: loadDecks, focus: loadWeekly };
+  const loaders = {
+    home: () => Promise.all([loadTasks(), loadWeekly(), loadBac()]),
+    leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, missions: loadMissions,
+    challenges: loadChallenges, rooms: loadPrivateRooms, bac: loadBac, cards: loadDecks,
+  };
   loaders[name]?.().catch((e) => toast(e.message, 'bad'));
 }
 
@@ -975,7 +1065,7 @@ function setupTabs() {
     if (b) location.hash = b.dataset.tab;
   });
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
-  showTab(location.hash.slice(1) || 'focus');
+  showTab(location.hash.slice(1) || 'home');
 }
 
 // ---------- Invite links (?g=CODE / ?r=CODE) ----------
@@ -1006,6 +1096,7 @@ async function acceptInvite() {
     me = await API.call('auth', 'me');
   } catch (e) {
     $('#player-bar').innerHTML = `<span class="form-error">${esc(e.message)}</span>`;
+    hideSplash();
     return;
   }
   setupProfile();
@@ -1024,6 +1115,8 @@ async function acceptInvite() {
   setupBac();
   setupWeekly();
   setupThemeSeg($('#theme-seg'));
+  document.addEventListener('click', (e) => { if (e.target.closest('#bell')) openBell(); });
+  Ambience.renderChips($('#amb-chips'));
   $('#stats-card').addEventListener('click', (e) => {
     if (e.target.id !== 'story-today') return;
     const u = state.profile.user;
@@ -1055,4 +1148,13 @@ async function acceptInvite() {
   setupTabs();
   acceptInvite();
   loadHistory().catch((e) => toast(e.message, 'bad'));
+  hideSplash();
 })();
+
+/** Fades the splash screen out once the account is loaded. */
+function hideSplash() {
+  const s = $('#splash');
+  if (!s) return;
+  s.classList.add('out');
+  setTimeout(() => s.remove(), 450);
+}

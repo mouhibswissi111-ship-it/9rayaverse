@@ -8,7 +8,9 @@ const API = {
     try {
       res = await fetch(url, { credentials: 'same-origin', ...options });
     } catch {
-      throw new Error('Ma najamtech nwsel lel serveur. Apache ykhdem fel XAMPP?');
+      if (IS_LOCAL) throw new Error('Ma najamtech nwsel lel serveur. Apache ykhdem fel XAMPP?');
+      showMoved();
+      throw new Error('Ma najjamnech nwasslou lel serveur. Od5ol men l\'lien l\'jdid walla 3awed ba3d chwaya.');
     }
     const text = await res.text();
     let json;
@@ -19,6 +21,7 @@ const API = {
       throw new Error('L\'serveur raja3 jweb ghalet. MySQL ykhdem w database.sql mimporti? (détails fel console)');
     }
     if (res.status === 401 && !document.body.dataset.public) location.href = 'index.html';
+    if (json.home_url) store.set('home', json.home_url);
     if (!json.ok) throw new Error(json.error || 'Sar mochkel.');
     return json;
   },
@@ -36,6 +39,21 @@ const API = {
     return this.request(`api/${endpoint}.php?action=${encodeURIComponent(action)}`, { method: 'POST', body: formData });
   },
 };
+
+const IS_LOCAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+// The public address changes on every start of the PC tunnel; this permanent page always points to the current one.
+const PERMANENT_HOME = 'https://mouhibswissi111-ship-it.github.io/9rayaverse/';
+
+/** Server unreachable on a public address: usually an old link or an app installed from an old address. */
+function showMoved() {
+  if (document.querySelector('.moved-bar')) return;
+  const home = store.get('home', '') || PERMANENT_HOME;
+  const bar = document.createElement('div');
+  bar.className = 'moved-bar';
+  bar.innerHTML = `<b>🔌 Ma najjamnech nwasslou lel site.</b><span>Ynajjem l'lien 9dim (l'adresse tetbaddel). Od5ol men l'lien l'dayem:</span>
+    <a class="btn primary sm" href="${esc(home + location.hash)}">🔗 Od5ol men l'lien l'jdid</a>`;
+  document.body.appendChild(bar);
+}
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -107,6 +125,7 @@ function toast(message, type = 'info', ms = 4000) {
 // ---------- Celebration modal (queued) ----------
 const modalQueue = [];
 function celebrate(emoji, title, text) {
+  confetti();
   modalQueue.push({ emoji, title, text });
   if (modalQueue.length === 1) showNextModal();
 }
@@ -121,6 +140,64 @@ function showNextModal() {
   back.addEventListener('click', (e) => { if (e.target === back) close(); });
   document.body.appendChild(back);
   $('button', back).focus();
+}
+
+// ---------- Bottom sheet (actions without leaving the page) ----------
+/** Opens a bottom sheet. Returns { el, close }. Closes on backdrop tap, ✕, Escape or a swipe down on the handle. */
+function openSheet(title, html, onMount) {
+  $('.sheet-back')?.remove();
+  const back = document.createElement('div');
+  back.className = 'sheet-back';
+  back.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head"><h3>${esc(title)}</h3><button class="sheet-x" aria-label="Sakker">✕</button></div>
+    <div class="sheet-body">${html}</div></div>`;
+  document.body.appendChild(back);
+  document.body.style.overflow = 'hidden';
+  const sheet = $('.sheet', back);
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    document.body.style.overflow = '';
+    back.classList.add('out');
+    setTimeout(() => back.remove(), 220);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  back.addEventListener('click', (e) => { if (e.target === back) close(); });
+  $('.sheet-x', back).addEventListener('click', close);
+
+  // Swipe down on the handle area to dismiss.
+  let startY = null;
+  const grab = $('.sheet-grab', back);
+  const head = $('.sheet-head', back);
+  [grab, head].forEach((h) => {
+    h.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; sheet.style.transition = 'none'; }, { passive: true });
+    h.addEventListener('touchmove', (e) => { if (startY !== null) sheet.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - startY)}px)`; }, { passive: true });
+    h.addEventListener('touchend', (e) => {
+      sheet.style.transition = '';
+      const dy = e.changedTouches[0].clientY - (startY ?? 0);
+      startY = null;
+      if (dy > 90) close(); else sheet.style.transform = '';
+    });
+  });
+  onMount?.(sheet, close);
+  return { el: sheet, close };
+}
+
+/** Confetti for big moments (level up, monster defeated, weekly challenge). */
+function confetti(count = 26) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div');
+  box.className = 'confetti';
+  const bits = ['🎉', '✨', '⭐', '🟠', '🟡', '🧡'];
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('span');
+    s.textContent = bits[i % bits.length];
+    s.style.cssText = `left:${Math.random() * 100}%;animation-delay:${Math.random() * 0.4}s;animation-duration:${1.6 + Math.random() * 1.4}s;font-size:${14 + Math.random() * 16}px`;
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3500);
 }
 
 /** Turns server game events into toasts / modals. */

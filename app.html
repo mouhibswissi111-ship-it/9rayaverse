@@ -2,12 +2,12 @@
 <html lang="aeb">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>9rayaverse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=9">
+  <link rel="stylesheet" href="assets/css/style.css?v=12">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,46 +17,59 @@
   <script>try{var t=JSON.parse(localStorage.getItem("rv.theme"))||"auto";if(t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="dark"}catch(e){}</script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="logo" href="app.html"><img src="assets/icons/icon-192.png?v=2" alt="">9raya<span>verse</span></a>
-    <span class="grow"></span>
-    <button class="btn sm primary" id="install-btn" data-install hidden>📲 Installi l'app</button>
-    <a class="btn sm warm" href="admin.html" id="admin-link" hidden>🛠️ Admin</a>
-    <button class="btn ghost sm" id="logout" title="Okhrej">🚪 Okhrej</button>
-  </header>
+  <!-- Splash: shown until the account is loaded, so it opens like a real app -->
+  <div class="splash" id="splash"><img src="assets/icons/icon-512.png?v=2" alt=""><b>9raya<span>verse</span></b><i class="splash-dots"><u></u><u></u><u></u></i></div>
 
-  <!-- Floating bottom navigation (main pages) -->
+  <!-- Floating bottom navigation: 4 main screens -->
   <nav class="bottom-nav" id="tabs" aria-label="Navigation">
-    <button data-tab="focus"><span class="ico">⏱️</span>9raya</button>
-    <button data-tab="rooms"><span class="ico">🏰</span>Salat</button>
-    <button data-tab="challenges"><span class="ico">⚔️</span>Tahadiyet</button>
-    <button data-tab="leaderboard"><span class="ico">🏆</span>Tartib</button>
-    <button data-tab="profile"><span class="ico">👤</span>Profili</button>
+    <button data-tab="home"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span>Accueil</button>
+    <button data-tab="focus"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/></svg></span>Timer</button>
+    <button data-tab="rooms"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V5M9 20V5M14 20 17 5.5l4 1L18 20M3 20h18"/></svg></span>Salat</button>
+    <button data-tab="challenges"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 13v4M8.5 20h7M10 17h4"/></svg></span>Tahadiyet</button>
   </nav>
 
   <main class="container">
-    <div class="card player-bar" id="player-bar"><span class="muted">Qa3din njibou l'compte mte3ek…</span></div>
-    <!-- More pages -->
-    <nav class="subnav" aria-label="Pages o5rin">
-      <button data-tab="bac">🎓 Imti7ani</button>
-      <button data-tab="cards">🃏 Cartes</button>
-      <button data-tab="missions">📚 Missions</button>
-      <button data-tab="quests">📝 Chghol</button>
-      <button data-tab="groups">👥 Jme3ti</button>
-      <button data-tab="shop">🛒 Hanout</button>
-    </nav>
+    <!-- Header like the prototype: avatar, level, XP, flous, streak -->
+    <div class="app-head" id="player-bar"><span class="muted">Qa3din njibou l'compte mte3ek…</span></div>
+    <button class="back-home" data-tab="home" id="back-home" hidden>← Accueil</button>
     <div class="alerts" id="alerts"></div>
 
-    <!-- 9RAYA (FOCUS) -->
-    <section class="tab-panel" data-panel="focus">
+    <!-- ACCUEIL (home) -->
+    <section class="tab-panel" data-panel="home">
+      <h1 class="home-title">Chouf rou7ek <span>titgaddem.</span></h1>
+      <p class="home-sub">Jom3tek fi nadhra, streak t7afedh 3lih, w perso yetla3 niveau m3ak.</p>
+      <div class="hero-tiles" id="hero-tiles"></div>
+      <div class="card home-tasks">
+        <div class="row spread"><h2 style="margin:0">📝 Chghol mte3i</h2><button class="btn pill-add" id="task-add">Zid</button></div>
+        <div class="list" id="task-list"></div>
+        <details class="done-today"><summary>✅ Kammeltou lyoum</summary><div class="list" id="task-done"></div>
+          <div class="row mt"><span class="chip">Sahel +5 XP</span><span class="chip">Metwassat +10 XP</span><span class="chip">S3ib +20 XP</span></div></details>
+      </div>
+      <div class="card weekly-card" id="weekly-card"></div>
+      <div class="card bac-mini" id="bac-mini" hidden></div>
+
+      <div class="more-title">Pages o5rin</div>
+      <div class="more-grid">
+        <button data-tab="leaderboard"><span>🏆</span>Tartib</button>
+        <button data-tab="bac"><span>🎓</span>Imti7ani</button>
+        <button data-tab="cards"><span>🃏</span>Cartes</button>
+        <button data-tab="missions"><span>📚</span>Missions</button>
+        <button data-tab="groups"><span>👥</span>Jme3ti</button>
+        <button data-tab="shop"><span>🛒</span>Hanout</button>
+        <button data-tab="profile"><span>👤</span>Profili</button>
+      </div>
+    </section>
+
+    <!-- TIMER (focus) -->
+    <section class="tab-panel" data-panel="focus" hidden>
       <div class="grid focus-grid">
         <div class="card">
           <h2>⏱️ Session 9raya</h2>
           <div id="focus-timer"></div>
+          <div class="amb-label">🎧 Jaw l'9raya</div>
+          <div class="amb-row" id="amb-chips"></div>
         </div>
         <div class="stack">
-          <div class="card weekly-card" id="weekly-card"></div>
-          <div class="card bac-mini" id="bac-mini" hidden></div>
           <div class="card monster-card" id="monster-card"></div>
           <div class="card" id="stats-card"></div>
         </div>
@@ -164,36 +177,6 @@
       </div>
     </section>
 
-    <!-- CHGHOL (TO-DOS) -->
-    <section class="tab-panel" data-panel="quests" hidden>
-      <div class="grid cols-2">
-        <div class="card">
-          <h2>📝 Chghol mte3i</h2>
-          <p class="hint">9assem l'9raya mte3ek l chghol sghar. Kol wa7ed tkammlou y3tik XP, flous w yadhrob l'ghoul.</p>
-          <form id="task-form" class="row" style="flex-wrap:nowrap;margin-bottom:14px">
-            <input class="input" name="title" maxlength="120" placeholder="mathalan: n7ell 10 exercices physique" required>
-            <select class="input" name="difficulty" style="width:auto">
-              <option value="easy">Sahel</option>
-              <option value="medium">Metwassat</option>
-              <option value="hard">S3ib</option>
-            </select>
-            <button class="btn primary" type="submit">Zid</button>
-          </form>
-          <div class="list" id="task-list"></div>
-        </div>
-        <div class="card">
-          <h2>✅ Kammeltou lyoum</h2>
-          <div class="list" id="task-done"></div>
-          <h3 class="mt">Ghnima</h3>
-          <div class="row">
-            <span class="chip">Sahel: +5 XP · 1 💰 · 2 ⚔️</span>
-            <span class="chip">Metwassat: +10 XP · 2 💰 · 4 ⚔️</span>
-            <span class="chip">S3ib: +20 XP · 4 💰 · 8 ⚔️</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- SALAT (ROOMS) -->
     <section class="tab-panel" data-panel="rooms" hidden>
       <h2>🏰 Salat 9raya virtuelles</h2>
@@ -267,10 +250,7 @@
         <div class="card">
           <h2>⚔️ Ebda tahaddi jdid</h2>
           <p class="hint">Elli ya9ra akther yerba7 (+100 XP, +50 flous) w ya5tar l'chart. Elli yakhser… lezem ya3mel l'chart 😈</p>
-          <form id="challenge-create">
-            <label class="field"><span>Fi ama jme3a?</span><select class="input" name="group_id" required></select></label>
-            <div class="challenge-fields"></div>
-          </form>
+          <button class="btn warm big" id="challenge-new" style="width:100%">⚔️ Tahaddi jdid</button>
         </div>
       </div>
     </section>
@@ -339,6 +319,14 @@
           </div>
           <div class="card" id="profile-stats"></div>
           <div class="card">
+            <h2>⚙️ L'compte</h2>
+            <div class="row">
+              <button class="btn primary" id="install-btn" data-install hidden>📲 Installi l'app</button>
+              <a class="btn warm" href="admin.html" id="admin-link" hidden>🛠️ Admin général</a>
+              <button class="btn" id="logout">🚪 Okhrej</button>
+            </div>
+          </div>
+          <div class="card">
             <h2>🔔 Notifications</h2>
             <div id="push-box"><p class="hint">Qa3din nchoufou…</p></div>
           </div>
@@ -365,11 +353,12 @@
     </section>
   </main>
 
-  <script src="assets/js/common.js?v=6"></script>
+  <script src="assets/js/common.js?v=8"></script>
   <script src="assets/js/avatar.js?v=4"></script>
+  <script src="assets/js/ambience.js?v=6"></script>
   <script src="assets/js/bac-data.js?v=1"></script>
   <script src="assets/js/focus.js?v=6"></script>
   <script src="assets/js/study.js?v=2"></script>
-  <script src="assets/js/app.js?v=7"></script>
+  <script src="assets/js/app.js?v=10"></script>
 </body>
 </html>

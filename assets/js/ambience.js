@@ -6,6 +6,7 @@ const Ambience = {
   layers: {}, // kind -> { gain, stop }
 
   SOUNDS: [
+    { kind: 'lofi', label: '🎹 Lo-fi (piano)' },
     { kind: 'rain', label: '🌧️ Mtar' },
     { kind: 'fire', label: '🔥 Kanoun' },
     { kind: 'waves', label: '🌊 Mouj l\'b7ar' },
@@ -102,6 +103,29 @@ const Ambience = {
         pop.stop(t + 0.12);
       }, 90);
       stops.push(() => { base.stop(); clearInterval(crackle); });
+    } else if (kind === 'lofi') {
+      // Slow, soft chord loop (generated): calm background for studying, no download needed.
+      const chords = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7]];
+      const bus = ctx.createGain();
+      bus.gain.value = 0.35;
+      bus.connect(this.filter('lowpass', 1800)).connect(gain);
+      let i = 0;
+      const play = () => chords[i++ % chords.length].forEach((fq) => {
+        const o = ctx.createOscillator();
+        const e = ctx.createGain();
+        const t = ctx.currentTime;
+        o.type = 'triangle';
+        o.frequency.value = fq;
+        e.gain.setValueAtTime(0.0001, t);
+        e.gain.linearRampToValueAtTime(0.5, t + 0.5);
+        e.gain.linearRampToValueAtTime(0.0001, t + 2.8);
+        o.connect(e).connect(bus);
+        o.start(t);
+        o.stop(t + 3);
+      });
+      play();
+      const loop = setInterval(play, 2800);
+      stops.push(() => clearInterval(loop));
     }
 
     this.layers[kind] = { gain, stop: () => { stops.forEach((s) => s()); gain.disconnect(); } };
@@ -119,6 +143,19 @@ const Ambience = {
   youtubeId(text) {
     const m = String(text).match(/(?:v=|youtu\.be\/|embed\/|live\/)([\w-]{11})/) || String(text).match(/^([\w-]{11})$/);
     return m ? m[1] : null;
+  },
+
+  /** Compact on/off chips (used on the dashboard timer). State survives tab changes: the app is one page. */
+  renderChips(root) {
+    const saved = store.get('vibes', {});
+    root.innerHTML = this.SOUNDS.map((s) => `<button type="button" class="amb-chip ${this.layers[s.kind] ? 'on' : ''}" data-amb="${s.kind}">${s.label}</button>`).join('');
+    root.onclick = (e) => {
+      const b = e.target.closest('[data-amb]');
+      if (!b) return;
+      const kind = b.dataset.amb;
+      if (this.layers[kind]) this.stop(kind); else this.start(kind, saved[kind] ?? 0.4);
+      b.classList.toggle('on', !!this.layers[kind]);
+    };
   },
 
   /** Renders the Vibes panel into root. */

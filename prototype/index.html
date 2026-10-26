@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="aeb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>9rayaverse — prototype</title>
+  <meta name="theme-color" content="#fff8f0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], head: ['Poppins', 'Inter', 'sans-serif'] },
+      colors: { cream: '#fff8f0', ink: '#2b1a10' } } } };
+  </script>
+  <style>
+    html, body, #root { height: 100%; }
+    body { margin: 0; background: #f1e7dc; font-family: Inter, system-ui, sans-serif; color: #2b1a10; -webkit-tap-highlight-color: transparent; }
+    .scroll { overflow-y: auto; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .glass { background: rgba(255,255,255,.72); backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); }
+    .floor { transform: rotateX(58deg) rotateZ(45deg); transform-style: preserve-3d; }
+    .upright { transform: rotateZ(-45deg) rotateX(-58deg); transform-origin: 50% 100%; }
+    .safe-b { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script>window.react = window.React;</script>
+  <script src="https://unpkg.com/framer-motion@10.18.0/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const FM = window.Motion || window.FramerMotion;
+const { motion, AnimatePresence, LayoutGroup } = FM;
+const L = window.LucideReact;
+const { Home, Timer: TimerIcon, Library, Swords, Flame, Coins, Bell, Trophy, Check, Plus, Play, Pause, RotateCcw, Lock, CloudRain,
+  Music, Armchair, Users, Coffee, X, Zap, Clock, Star, BookOpen, ChevronLeft, Sparkles, Heart, Skull, Wifi } = L;
+
+if (FM.MotionGlobalConfig && new URLSearchParams(location.search).has('still')) FM.MotionGlobalConfig.skipAnimations = true; // ?still = no animations (tests, slow phones)
+const FAST = new URLSearchParams(location.search).has('fast'); // demo: time runs 60x faster
+const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const hm = (s) => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
+const spring = { type: 'spring', stiffness: 420, damping: 32 };
+
+/* ---------------- ambient sounds (generated, no files) ---------------- */
+const Ambient = (() => {
+  let ctx, master, active = {};
+  const ensure = () => { if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); } ctx.resume(); };
+  const noise = (type) => {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); const d = buf.getChannelData(0); let last = 0;
+    for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; if (type === 'brown') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; return src;
+  };
+  const makers = {
+    rain: () => { const n = noise('white'), f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'highpass'; f.frequency.value = 1400; g.gain.value = 0.12; n.connect(f); f.connect(g); g.connect(master); n.start(); return () => { n.stop(); g.disconnect(); }; },
+    fire: () => { const n = noise('brown'), f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0.5; n.connect(f); f.connect(g); g.connect(master);
+      const t = setInterval(() => { g.gain.value = 0.3 + Math.random() * 0.4; }, 160); n.start(); return () => { clearInterval(t); n.stop(); g.disconnect(); }; },
+    lofi: () => { const g = ctx.createGain(); g.gain.value = 0.08; g.connect(master); const chords = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7]]; let i = 0;
+      const play = () => { chords[i++ % 4].forEach((fq) => { const o = ctx.createOscillator(), e = ctx.createGain(); o.type = 'triangle'; o.frequency.value = fq; e.gain.setValueAtTime(0, ctx.currentTime); e.gain.linearRampToValueAtTime(1, ctx.currentTime + .4); e.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.6); o.connect(e); e.connect(g); o.start(); o.stop(ctx.currentTime + 2.7); }); };
+      play(); const t = setInterval(play, 2800); return () => { clearInterval(t); g.disconnect(); }; },
+  };
+  return { set(key, on) { try { ensure(); } catch { return; } if (on && !active[key]) active[key] = makers[key](); if (!on && active[key]) { active[key](); delete active[key]; } }, stopAll() { Object.keys(active).forEach((k) => this.set(k, false)); } };
+})();
+
+/* ---------------- shared bits ---------------- */
+function Avatar({ emoji, size = 44, ring = false, bg = '#ffedd5' }) {
+  return <div style={{ width: size, height: size, background: bg, fontSize: size * 0.55 }} className={`rounded-full grid place-items-center shrink-0 ${ring ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-white' : ''}`}>{emoji}</div>;
+}
+function Bar({ value, max = 100, color = 'from-orange-400 to-orange-600', h = 'h-2.5' }) {
+  return <div className={`${h} w-full rounded-full bg-orange-100 overflow-hidden`}><motion.div className={`h-full rounded-full bg-gradient-to-r ${color}`} animate={{ width: `${Math.max(0, Math.min(100, (value / max) * 100))}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} /></div>;
+}
+const Card = ({ className = '', children, ...p }) => <div className={`bg-white rounded-3xl shadow-[0_8px_30px_rgba(234,88,12,.08)] border border-orange-100/70 ${className}`} {...p}>{children}</div>;
+const Tap = ({ children, className = '', ...p }) => <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.02 }} transition={spring} className={className} {...p}>{children}</motion.button>;
+
+function Sheet({ open, onClose, title, children }) {
+  const host = document.getElementById('sheet-root'); // inside the phone frame, above the nav
+  if (!host) return null;
+  return ReactDOM.createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div className="absolute inset-0 z-50 flex items-end pointer-events-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
+          <motion.div className="relative w-full bg-cream rounded-t-[32px] p-5 safe-b max-h-[85%] scroll shadow-2xl"
+            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+            drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }} onDragEnd={(_, i) => { if (i.offset.y > 90) onClose(); }}>
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-orange-200" />
+            <div className="flex items-center justify-between mb-3"><h3 className="font-head font-bold text-lg">{title}</h3>
+              <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-full bg-orange-100 text-orange-700"><X size={16} /></button></div>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    host
+  );
+}
+
+/* ---------------- header & nav ---------------- */
+function Header({ me, onBell, unread }) {
+  const need = 100 + me.level * 10;
+  return (
+    <div className="glass z-20 px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 rounded-b-[28px] shadow-[0_6px_24px_rgba(234,88,12,.10)] border-b border-white/60">
+      <div className="flex items-center gap-3">
+        <Avatar emoji="😎" size={46} ring />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2"><span className="font-head font-bold truncate">{me.name}</span><span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Admin</span></div>
+          <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wide">Niveau {me.level} · Sidi Bouzid</div>
+        </div>
+        <Tap onClick={onBell} className="relative h-10 w-10 grid place-items-center rounded-full bg-white shadow-sm border border-orange-100"><Bell size={18} className="text-orange-600" />
+          {unread > 0 && <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center">{unread}</span>}</Tap>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <Star size={14} className="text-amber-500 fill-amber-400 shrink-0" /><span className="text-[11px] font-bold text-orange-600">XP</span>
+        <Bar value={me.xp} max={need} /><span className="text-[11px] font-semibold text-stone-500 tabular-nums">{Math.floor(me.xp)}/{need}</span>
+      </div>
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        <div className="flex items-center justify-center gap-1.5 rounded-2xl bg-orange-50/80 border border-orange-100 py-2 text-sm font-bold"><Coins size={15} className="text-amber-500" />{Math.floor(me.coins)} <span className="font-medium text-stone-500">flous</span></div>
+        <div className="flex items-center justify-center gap-1.5 rounded-2xl bg-orange-100 border border-orange-200 py-2 text-sm font-bold text-orange-700"><Flame size={15} />{me.streak} <span className="font-medium">ayem streak</span></div>
+      </div>
+    </div>
+  );
+}
+
+const TABS = [['home', 'Accueil', Home], ['timer', 'Timer', TimerIcon], ['rooms', 'Salat', Library], ['challenges', 'Tahadiyet', Trophy]];
+function BottomNav({ tab, setTab }) {
+  return (
+    <div className="px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 z-30">
+      <div className="glass rounded-[28px] p-1.5 flex shadow-[0_10px_40px_rgba(43,26,16,.14)] border border-white/70">
+        <LayoutGroup>
+          {TABS.map(([id, label, Icon]) => (
+            <button key={id} onClick={() => setTab(id)} className="relative flex-1 py-2 flex flex-col items-center gap-0.5">
+              {tab === id && <motion.div layoutId="pill" className="absolute inset-0 rounded-[22px] bg-orange-100" transition={spring} />}
+              <motion.span className="relative" animate={{ y: tab === id ? -1 : 0, scale: tab === id ? 1.1 : 1 }}><Icon size={22} className={tab === id ? 'text-orange-600' : 'text-stone-400'} strokeWidth={tab === id ? 2.4 : 2} /></motion.span>
+              <span className={`relative text-[10.5px] font-bold ${tab === id ? 'text-orange-700' : 'text-stone-400'}`}>{label}</span>
+              {tab === id && <motion.span layoutId="dot" className="relative h-1 w-1 rounded-full bg-orange-500" />}
+            </button>
+          ))}
+        </LayoutGroup>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Accueil ---------------- */
+function HomeTab({ me, tasks, setTasks, gain, goTimer }) {
+  const [adding, setAdding] = useState(false);
+  const [text, setText] = useState('');
+  const [level, setLevel] = useState('medium');
+  const REW = { easy: [5, 1], medium: [10, 2], hard: [20, 4] };
+  const done = tasks.filter((t) => t.done).length;
+  const complete = (t) => { if (t.done) return; setTasks((l) => l.map((x) => (x.id === t.id ? { ...x, done: true } : x))); gain(...REW[t.level], `+${REW[t.level][0]} XP · +${REW[t.level][1]} flous`); };
+  const add = () => { if (!text.trim()) return; setTasks((l) => [...l, { id: Date.now(), title: text.trim(), level, done: false }]); setText(''); setAdding(false); };
+  return (
+    <div className="space-y-5">
+      <div><h1 className="font-head font-extrabold text-[28px] leading-tight">Chouf rou7ek <span className="text-orange-600">titgaddem.</span></h1>
+        <p className="text-sm text-stone-500 mt-1">Jom3tek fi nadhra, streak t7afedh 3lih, w perso yetla3 niveau m3ak.</p></div>
+      <div className="grid grid-cols-3 gap-3">
+        {[[Flame, me.streak, 'ayem mtab3in', 'text-orange-500 bg-orange-50'], [BookOpen, `${Math.round(me.seconds / 3600)}h`, 'wa9t lkol', 'text-sky-500 bg-sky-50'], [Trophy, `Nv ${me.level}`, 'niveau', 'text-amber-500 bg-amber-50']].map(([I, v, l, c], i) => (
+          <motion.div key={l} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, ...spring }}>
+            <Card className="p-3 text-center"><div className={`mx-auto h-9 w-9 rounded-full grid place-items-center ${c}`}><I size={18} /></div>
+              <div className="font-head font-extrabold text-xl mt-2 tabular-nums">{v}</div><div className="text-[10px] font-bold uppercase tracking-wide text-stone-400">{l}</div></Card>
+          </motion.div>))}
+      </div>
+      <Card className="p-4 bg-gradient-to-br from-white to-orange-50">
+        <div className="flex items-center gap-3">
+          <motion.div animate={{ rotate: [0, -8, 8, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="text-4xl">🦇</motion.div>
+          <div className="flex-1"><div className="font-bold text-sm">L'ghoul l'youmi: Wtwat l'Distraction</div><div className="text-xs text-stone-500 mb-1.5">9ra 60 d9i9a lyoum bech tghlebou · +40 XP</div>
+            <Bar value={Math.min(60, me.todayMin)} max={60} color="from-rose-400 to-rose-600" /></div>
+        </div>
+        <Tap onClick={goTimer} className="mt-3 w-full rounded-2xl bg-orange-600 text-white font-bold py-2.5 text-sm shadow-lg shadow-orange-300/50">⚔️ Ndharbou</Tap>
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3"><h2 className="font-head font-bold text-lg">📝 Chghol mte3i <span className="text-xs font-semibold text-stone-400">{done}/{tasks.length}</span></h2>
+          <Tap onClick={() => setAdding(true)} className="px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-xs font-bold flex items-center gap-1"><Plus size={14} />Zid</Tap></div>
+        <div className="space-y-2">
+          <AnimatePresence initial={false}>
+            {tasks.map((t) => (
+              <motion.div layout key={t.id} initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, x: 40 }} transition={spring}
+                className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50/40 px-3 py-2.5">
+                <motion.button whileTap={{ scale: .8 }} onClick={() => complete(t)} className={`h-6 w-6 rounded-full border-2 grid place-items-center shrink-0 ${t.done ? 'bg-orange-500 border-orange-500' : 'border-orange-300 bg-white'}`}>
+                  {t.done && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}><Check size={14} className="text-white" strokeWidth={3} /></motion.span>}</motion.button>
+                <span className={`flex-1 text-sm font-semibold ${t.done ? 'line-through text-stone-400' : ''}`}>{t.title}</span>
+                <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">+{REW[t.level][0]} XP</span>
+              </motion.div>))}
+          </AnimatePresence>
+        </div>
+      </Card>
+      <Sheet open={adding} onClose={() => setAdding(false)} title="Chghol jdid">
+        <input autoFocus value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="mathalan: n7ell 10 exercices physique" className="w-full rounded-2xl border border-orange-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-300" />
+        <div className="grid grid-cols-3 gap-2 mt-3">{[['easy', 'Sahel', '+5 XP'], ['medium', 'Metwassat', '+10 XP'], ['hard', 'S3ib', '+20 XP']].map(([k, l, r]) => (
+          <button key={k} onClick={() => setLevel(k)} className={`rounded-2xl py-2.5 text-sm font-bold border-2 ${level === k ? 'border-orange-500 bg-orange-100 text-orange-700' : 'border-orange-100 bg-white text-stone-500'}`}>{l}<div className="text-[10px] font-semibold opacity-70">{r}</div></button>))}</div>
+        <Tap onClick={add} className="mt-4 w-full rounded-2xl bg-orange-600 text-white font-bold py-3 shadow-lg shadow-orange-300/50">Zid</Tap>
+      </Sheet>
+    </div>
+  );
+}
+
+/* ---------------- Timer ---------------- */
+function TimerTab({ timer, setTimer, ambient, setAmbient }) {
+  const { minutes, left, running, strict } = timer;
+  const total = minutes * 60;
+  const hp = Math.round((left / total) * 100);
+  const R = 118, C = 2 * Math.PI * R;
+  const [warn, setWarn] = useState(false);
+  const setMin = (m) => !running && setTimer((t) => ({ ...t, minutes: m, left: m * 60 }));
+  const toggle = () => { if (!running && strict) setWarn(true); else setTimer((t) => ({ ...t, running: !t.running })); };
+  const sounds = [['lofi', 'Lo-Fi', Music], ['rain', 'Mtar', CloudRain], ['fire', 'Kanoun', Flame]];
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between"><h1 className="font-head font-extrabold text-[26px]">9rayti <span className="text-orange-600">⏱️</span></h1>
+        <div className="flex gap-1.5 p-1 rounded-full bg-white border border-orange-100 shadow-sm">
+          {[25, 45, 60].map((m) => (<button key={m} onClick={() => setMin(m)} className="relative px-3.5 py-1.5 text-sm font-bold rounded-full">
+            {minutes === m && <motion.span layoutId="dur" className="absolute inset-0 rounded-full bg-orange-500" transition={spring} />}
+            <span className={`relative ${minutes === m ? 'text-white' : 'text-stone-500'}`}>{m}</span></button>))}</div></div>
+      <Card className="p-5 bg-gradient-to-b from-white to-orange-50/70 text-center overflow-hidden">
+        <div className="flex items-center justify-between text-xs font-bold mb-1"><span className="flex items-center gap-1 text-rose-600"><Heart size={13} className="fill-rose-500" />L'ghoul</span><span className="tabular-nums text-stone-500">{hp} / 100 HP</span></div>
+        <Bar value={hp} max={100} color="from-rose-400 to-rose-600" h="h-3" />
+        <div className="relative mx-auto mt-4" style={{ width: 270, height: 270 }}>
+          <svg viewBox="0 0 270 270" className="absolute inset-0 -rotate-90">
+            <circle cx="135" cy="135" r={R} fill="none" stroke="#ffedd5" strokeWidth="14" />
+            <motion.circle cx="135" cy="135" r={R} fill="none" stroke="url(#g)" strokeWidth="14" strokeLinecap="round" strokeDasharray={C} animate={{ strokeDashoffset: C * (1 - left / total) }} transition={{ ease: 'linear', duration: 0.4 }} />
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fbbf24" /><stop offset="1" stopColor="#ea580c" /></linearGradient></defs>
+          </svg>
+          <div className="absolute inset-0 grid place-items-center">
+            <div>
+              <motion.div key={hp > 0 ? Math.floor(left / 5) : 'dead'} animate={running ? { y: [0, -6, 0], rotate: [0, -6, 6, 0] } : {}} transition={{ duration: 1.2, repeat: Infinity }} className="text-6xl leading-none">{hp > 0 ? '🦇' : '💥'}</motion.div>
+              <div className="font-head font-extrabold text-5xl tabular-nums mt-1">{fmt(left)}</div>
+              <div className="text-xs font-bold text-orange-600 mt-1">{running ? (strict ? '🔒 Mode sarem' : '🌿 Ya9ra tawa…') : left === 0 ? 'Kammelt! 🎉' : left < total ? '⏸ Pause' : 'Jaheez?'}</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-3 mt-3">
+          <Tap onClick={() => setTimer((t) => ({ ...t, running: false, left: t.minutes * 60 }))} className="h-12 w-12 rounded-full bg-white border border-orange-200 grid place-items-center text-orange-600 shadow-sm"><RotateCcw size={20} /></Tap>
+          <Tap onClick={toggle} className="h-16 px-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold text-lg flex items-center gap-2 shadow-xl shadow-orange-300/60">
+            {running ? <><Pause size={22} className="fill-white" />Pause</> : <><Play size={22} className="fill-white" />{left < total ? 'Kammel' : 'Yallah'}</>}</Tap>
+        </div>
+      </Card>
+      <Card className={`p-4 border-2 ${strict ? 'border-orange-400 bg-orange-50' : ''}`}>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div className={`h-10 w-10 rounded-2xl grid place-items-center ${strict ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}><Lock size={19} /></div>
+          <div className="flex-1"><div className="font-bold text-sm">Mode Sarem</div><div className="text-xs text-stone-500">Ken tokhrej mel app, tekhsar XP w sa77a. XP ×1.5 ken kammelt.</div></div>
+          <button disabled={running} onClick={() => setTimer((t) => ({ ...t, strict: !t.strict }))} className={`relative h-7 w-12 rounded-full transition-colors ${strict ? 'bg-orange-500' : 'bg-stone-300'} ${running ? 'opacity-50' : ''}`}>
+            <motion.span layout transition={spring} className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow" style={{ left: strict ? 22 : 2 }} /></button>
+        </label>
+      </Card>
+      <div>
+        <div className="text-xs font-bold uppercase tracking-wide text-stone-400 mb-2">Jaw l'9raya</div>
+        <div className="grid grid-cols-3 gap-2.5">{sounds.map(([k, l, I]) => (
+          <Tap key={k} onClick={() => setAmbient((a) => ({ ...a, [k]: !a[k] }))} className={`rounded-2xl py-3 flex flex-col items-center gap-1 border-2 text-xs font-bold ${ambient[k] ? 'border-orange-500 bg-orange-100 text-orange-700' : 'border-orange-100 bg-white text-stone-500'}`}>
+            <I size={22} />{l}{ambient[k] && <motion.span layoutId={`eq-${k}`} className="flex gap-0.5 h-2 items-end">{[0, 1, 2].map((i) => <motion.i key={i} className="w-0.5 bg-orange-500 rounded" animate={{ height: [3, 9, 4] }} transition={{ repeat: Infinity, duration: .6, delay: i * .15 }} />)}</motion.span>}</Tap>))}</div>
+      </div>
+      <Sheet open={warn} onClose={() => setWarn(false)} title="Mode Sarem 🔒">
+        <p className="text-sm text-stone-600">Ken tokhrej mel app wenti ta9ra, <b>tekhsar 20% men XP</b> w l'ghoul yadhrbek. Thabbet 9bal ma tebda.</p>
+        <div className="grid grid-cols-2 gap-2 mt-4"><button onClick={() => setWarn(false)} className="rounded-2xl py-3 font-bold bg-white border border-orange-200 text-stone-600">Le</button>
+          <Tap onClick={() => { setWarn(false); setTimer((t) => ({ ...t, running: true })); }} className="rounded-2xl py-3 font-bold bg-orange-600 text-white shadow-lg shadow-orange-300/50">Ey, nebdew 💪</Tap></div>
+      </Sheet>
+    </div>
+  );
+}
+
+/* ---------------- Salat ---------------- */
+const ROOMS = [
+  { id: 'library', name: 'Maktabet Lil', emoji: '📚', desc: 'Skoot w lampet dafya', grad: 'from-indigo-200 to-violet-300', online: 12, seats: [[0, 0, 'rania_sfax', '👩'], [2, 0, 'ayoub.tunis', '🧑'], [1, 2, 'yosr_sousse', '👧'], [3, 3, 'amine_kef', '🧔']] },
+  { id: 'cafe', name: '9ahwet Sidi Bou', emoji: '☕', desc: 'Lo-fi w 9ahwa', grad: 'from-amber-200 to-orange-300', online: 8, seats: [[1, 0, 'sirine_nabeul', '👩'], [3, 1, 'mehdi_sfax', '🧑'], [0, 3, 'ines_tunis', '👱']] },
+  { id: 'forest', name: 'Dar fi 3in Draham', emoji: '🌲', desc: 'Mtar w kanoun', grad: 'from-emerald-200 to-teal-300', online: 5, seats: [[2, 1, 'oussama_kef', '🧔'], [0, 2, 'molka_bizerte', '👧']] },
+];
+function Room({ room, me, seated, setSeated, timer, onBack, gain }) {
+  const [shared, setShared] = useState({ left: 25 * 60, on: true });
+  useEffect(() => { const t = setInterval(() => setShared((s) => (s.on ? { ...s, left: s.left <= 1 ? 25 * 60 : s.left - (FAST ? 30 : 1) } : s)), 1000); return () => clearInterval(t); }, []);
+  const myPos = [1, 1];
+  const people = [...room.seats.map(([c, r, n, e]) => ({ c, r, n, e, off: 4 + c * 3 + r * 2 })), ...(seated ? [{ c: myPos[0], r: myPos[1], n: 'Enti', e: '😎', me: true, off: 0 }] : [])];
+  const N = 4;
+  return (
+    <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} className="space-y-4">
+      <div className="flex items-center gap-3"><Tap onClick={onBack} className="h-10 w-10 rounded-full bg-white border border-orange-100 grid place-items-center shadow-sm"><ChevronLeft size={20} /></Tap>
+        <div className="flex-1"><div className="font-head font-bold text-lg leading-tight">{room.emoji} {room.name}</div><div className="text-xs text-stone-500">{people.length} ya9raw tawa</div></div>
+        <div className="rounded-2xl bg-orange-600 text-white px-3 py-1.5 text-center shadow-lg shadow-orange-300/50"><div className="text-[9px] font-bold uppercase opacity-80">Timer jme3i</div><div className="font-head font-bold tabular-nums">{fmt(shared.left)}</div></div></div>
+      <Card className={`relative overflow-hidden bg-gradient-to-b ${room.grad}`} style={{ height: 360, perspective: 900 }}>
+        <div className="absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2" style={{ perspective: 1000 }}>
+          <div className="floor relative" style={{ width: 290, height: 290 }}>
+            <div className="absolute inset-0 rounded-xl shadow-2xl" style={{ background: 'repeating-conic-gradient(#fff7ed 0% 25%, #fed7aa 0% 50%) 0 0/72.5px 72.5px', border: '6px solid #fff' }} />
+            {Array.from({ length: N * N }).map((_, i) => { const c = i % N, r = Math.floor(i / N); const p = people.find((x) => x.c === c && x.r === r);
+              return (<div key={i} className="absolute" style={{ transformStyle: 'preserve-3d', left: c * 72.5, top: r * 72.5, width: 72.5, height: 72.5 }}>
+                <div className="upright absolute left-1/2 bottom-[14px] -translate-x-1/2 flex flex-col items-center" style={{ width: 70 }}>
+                  {p ? (<motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: [0, -3, 0], opacity: 1 }} transition={{ y: { repeat: Infinity, duration: 2.4 + (c + r) * .2 }, opacity: { duration: .3 } }} className="flex flex-col items-center">
+                    <div className={`text-[9px] font-bold whitespace-nowrap rounded-full px-1.5 py-0.5 shadow ${p.me ? 'bg-orange-600 text-white' : 'bg-white text-ink'}`}>{p.n} · {fmt(Math.max(0, shared.left - p.off))}</div>
+                    <div className="text-[38px] leading-none mt-0.5 drop-shadow">{p.e}</div></motion.div>)
+                    : (c === 1 && r === 1 ? <div className="text-[28px] opacity-60">🪑</div> : <div className="text-[18px] opacity-30">▫️</div>)}
+                  <div className="h-2.5 w-9 rounded bg-amber-800/40 -mt-1" />
+                </div></div>); })}
+          </div>
+        </div>
+      </Card>
+      <AnimatePresence mode="wait">
+        <Tap key={String(seated)} onClick={() => { setSeated(!seated); if (!seated) gain(2, 0, 'O93det m3a l\'jme3a 🪑'); }}
+          className={`w-full rounded-2xl py-4 font-bold text-lg flex items-center justify-center gap-2 shadow-xl ${seated ? 'bg-emerald-500 text-white shadow-emerald-300/60' : 'bg-orange-600 text-white shadow-orange-300/60'}`}>
+          <Armchair size={22} />{seated ? 'Ya9ra m3ahom ✓ (O93ef)' : 'O93od (S\'asseoir)'}</Tap>
+      </AnimatePresence>
+      <p className="text-xs text-center text-stone-500">{seated ? 'Timer l'+"'"+'sala ye5dem m3ak. Ab9a mrekez 💪' : 'O93od 3and bureau bech tebda timer jme3i m3a s7abek.'}</p>
+    </motion.div>
+  );
+}
+function RoomsTab({ me, seated, setSeated, timer, gain }) {
+  const [room, setRoom] = useState(null);
+  return (
+    <AnimatePresence mode="wait">
+      {room ? <Room key="r" room={room} me={me} seated={seated} setSeated={setSeated} timer={timer} onBack={() => { setRoom(null); setSeated(false); }} gain={gain} />
+        : (<motion.div key="l" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+          <div><h1 className="font-head font-extrabold text-[26px]">Salat 9raya <span className="text-orange-600">🏰</span></h1><p className="text-sm text-stone-500">N9raw m3a ba3dhna. Win ma kenna.</p></div>
+          {ROOMS.map((r, i) => (
+            <motion.div key={r.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .08, ...spring }}>
+              <Card className="overflow-hidden"><button onClick={() => setRoom(r)} className="w-full text-left">
+                <div className={`h-28 bg-gradient-to-br ${r.grad} relative grid place-items-center`}><span className="text-6xl">{r.emoji}</span>
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" /></span>{r.online} ya9raw</div></div>
+                <div className="p-4 flex items-center gap-3"><div className="flex-1"><div className="font-head font-bold">{r.name}</div><div className="text-xs text-stone-500">{r.desc}</div></div>
+                  <div className="flex -space-x-2">{r.seats.slice(0, 3).map(([, , n, e]) => <div key={n} className="h-8 w-8 rounded-full bg-orange-100 border-2 border-white grid place-items-center text-sm">{e}</div>)}</div>
+                  <span className="rounded-full bg-orange-600 text-white text-xs font-bold px-3 py-2">Od5ol</span></div></button></Card>
+            </motion.div>))}
+        </motion.div>)}
+    </AnimatePresence>
+  );
+}
+
+/* ---------------- Tahadiyet ---------------- */
+function ChallengesTab({ me, running, gain }) {
+  const [rows, setRows] = useState([{ n: 'rania_sfax', e: '👩', s: 21 * 3600 + 40 * 60, r: 3 }, { n: 'Enti', e: '😎', s: 19 * 3600 + 5 * 60, r: 5, me: true }, { n: 'ayoub.tunis', e: '🧑', s: 14 * 3600 + 10 * 60, r: 2 }, { n: 'yosr_sousse', e: '👧', s: 11 * 3600 + 25 * 60, r: 2 }, { n: 'amine_kef', e: '🧔', s: 9 * 3600 + 2 * 60, r: 1 }]);
+  const [open, setOpen] = useState(false);
+  const [cfg, setCfg] = useState({ metric: 'Akther wa9t', span: 'Jom3a', penalty: '9ahwa lel jme3a ☕' });
+  useEffect(() => { const t = setInterval(() => setRows((rs) => rs.map((x) => ({ ...x, s: x.s + (x.me ? (running ? 1 : 0) : Math.random() < x.r / 6 ? 1 : 0) * (FAST ? 40 : 1) }))), 1000); return () => clearInterval(t); }, [running]);
+  const sorted = [...rows].sort((a, b) => b.s - a.s);
+  const max = sorted[0].s;
+  const medal = ['🥇', '🥈', '🥉'];
+  return (
+    <div className="space-y-5">
+      <div className="flex items-end justify-between"><div><h1 className="font-head font-extrabold text-[26px]">Tahadiyet <span className="text-orange-600">⚔️</span></h1>
+        <p className="text-sm text-stone-500">Sba9 sari3: l'awel elli ywsel 25 sa3a</p></div>
+        <Tap onClick={() => setOpen(true)} className="rounded-full bg-orange-600 text-white text-xs font-bold px-4 py-2.5 flex items-center gap-1 shadow-lg shadow-orange-300/50"><Plus size={14} />Tahaddi jdid</Tap></div>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3"><div className="font-head font-bold">Tahaddi s7abek 🏁</div><span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />LIVE</span></div>
+        <div className="space-y-2.5">
+          <AnimatePresence>
+            {sorted.map((p, i) => (
+              <motion.div layout key={p.n} transition={spring} className={`rounded-2xl p-3 ${p.me ? 'bg-orange-100 ring-2 ring-orange-300' : 'bg-orange-50/60'}`}>
+                <div className="flex items-center gap-3"><span className="w-6 text-center font-bold">{medal[i] || i + 1}</span><Avatar emoji={p.e} size={36} bg="#fff" />
+                  <span className="flex-1 font-bold text-sm truncate">{p.n}</span><span className="font-head font-bold tabular-nums text-sm">{hm(p.s)}</span></div>
+                <div className="mt-2 pl-9"><Bar value={p.s} max={25 * 3600} h="h-2" color={p.me ? 'from-orange-400 to-orange-600' : 'from-amber-300 to-orange-400'} /></div>
+              </motion.div>))}
+          </AnimatePresence>
+        </div>
+      </Card>
+      <motion.div whileHover={{ rotate: -0.6 }} className="rounded-3xl p-4 bg-gradient-to-br from-rose-50 to-orange-50 border-2 border-dashed border-rose-300">
+        <div className="flex items-center gap-2 text-xs font-bold text-rose-600 uppercase tracking-wide"><Skull size={14} />L'chart mta3 elli yakhser</div>
+        <div className="font-head font-bold text-lg mt-1">"Elli yakhser ykhalles 9ahwa" ☕</div>
+        <div className="text-xs text-stone-500 mt-1">Elli yerba7 ya5tar l'chart. L'khasrin yab3thou preuve (taswira) 📸</div>
+      </motion.div>
+      <Sheet open={open} onClose={() => setOpen(false)} title="Tahaddi jdid">
+        {[['metric', 'Chnowa n7asbou?', ['Akther wa9t', 'Akther missions']], ['span', 'L\'modda', ['Nhar', 'Jom3a', 'Chhar']], ['penalty', 'L\'chart', ['9ahwa lel jme3a ☕', 'Lablebi lel kol 🍲', 'Selfie mdhaha 🤡']]].map(([k, label, opts]) => (
+          <div key={k} className="mb-3"><div className="text-xs font-bold text-stone-500 mb-1.5">{label}</div><div className="flex flex-wrap gap-2">{opts.map((o) => (
+            <button key={o} onClick={() => setCfg((c) => ({ ...c, [k]: o }))} className={`rounded-full px-3.5 py-2 text-sm font-bold border-2 ${cfg[k] === o ? 'border-orange-500 bg-orange-100 text-orange-700' : 'border-orange-100 bg-white text-stone-500'}`}>{o}</button>))}</div></div>))}
+        <Tap onClick={() => { setOpen(false); gain(5, 0, '⚔️ Tahaddi tbe3eth lel s7ab!'); }} className="mt-2 w-full rounded-2xl bg-orange-600 text-white font-bold py-3 shadow-lg shadow-orange-300/50">⚔️ Ebda l'tahaddi</Tap>
+      </Sheet>
+    </div>
+  );
+}
+
+/* ---------------- App ---------------- */
+function Toasts({ list }) {
+  return (<div className="absolute top-[150px] inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none"><AnimatePresence>{list.map((t) => (
+    <motion.div key={t.id} initial={{ opacity: 0, y: -16, scale: .9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10 }} className="rounded-full bg-ink text-white text-sm font-bold px-4 py-2 shadow-xl">{t.text}</motion.div>))}</AnimatePresence></div>);
+}
+
+function App() {
+  const [tab, setTab] = useState('home');
+  const [me, setMe] = useState({ name: 'mouhibswissi', level: 12, xp: 79, coins: 19, streak: 2, seconds: 472 * 3600, todayMin: 20 });
+  const [tasks, setTasks] = useState([{ id: 1, title: 'Analyse chapitre 3', level: 'medium', done: true }, { id: 2, title: 'Revision Physique', level: 'medium', done: false }, { id: 3, title: 'Série exercices Math', level: 'hard', done: false }]);
+  const [timer, setTimer] = useState({ minutes: 25, left: 25 * 60, running: false, strict: false });
+  const [ambient, setAmbient] = useState({ lofi: false, rain: false, fire: false });
+  const [seated, setSeated] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [bell, setBell] = useState(false);
+  const [notifs, setNotifs] = useState(['rania_sfax bdat ta9ra 📚', 'Tahaddi l\'jom3a jdid tla3 ⚔️']);
+
+  const toast = useCallback((text) => { const id = Math.random(); setToasts((l) => [...l, { id, text }]); setTimeout(() => setToasts((l) => l.filter((x) => x.id !== id)), 2400); }, []);
+  const gain = useCallback((xp, coins, text) => {
+    setMe((m) => { let x = m.xp + xp, lv = m.level; while (x >= 100 + lv * 10) { x -= 100 + lv * 10; lv++; } return { ...m, xp: x, level: lv, coins: m.coins + coins }; });
+    toast(text);
+  }, [toast]);
+
+  // countdown
+  useEffect(() => {
+    if (!timer.running) return;
+    const t = setInterval(() => setTimer((s) => (s.left <= 1 ? { ...s, left: 0, running: false } : { ...s, left: s.left - (FAST ? 60 : 1) })), 1000);
+    return () => clearInterval(t);
+  }, [timer.running]);
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !timer.running && timer.left === 0) {
+      const mult = timer.strict ? 1.5 : 1;
+      gain(Math.round(timer.minutes * mult), Math.floor(timer.minutes / 5) + (timer.strict ? 3 : 0), `🎉 Ghlebt l'ghoul! +${Math.round(timer.minutes * mult)} XP`);
+      setMe((m) => ({ ...m, seconds: m.seconds + timer.minutes * 60, todayMin: m.todayMin + timer.minutes, streak: m.streak }));
+    }
+    wasRunning.current = timer.running;
+  }, [timer.running]);
+  // strict mode: leaving the app costs points
+  useEffect(() => {
+    const onHide = () => { if (document.hidden && timer.running && timer.strict) { setTimer((s) => ({ ...s, running: false, left: s.minutes * 60 })); setMe((m) => ({ ...m, xp: Math.max(0, m.xp * 0.8) })); toast('💔 Khrajt mel app! Khsart 20% XP'); } };
+    document.addEventListener('visibilitychange', onHide); return () => document.removeEventListener('visibilitychange', onHide);
+  }, [timer.running, timer.strict]);
+  // ambient sounds
+  useEffect(() => { Object.entries(ambient).forEach(([k, v]) => Ambient.set(k, v)); }, [ambient]);
+
+  const page = {
+    home: <HomeTab me={me} tasks={tasks} setTasks={setTasks} gain={gain} goTimer={() => setTab('timer')} />,
+    timer: <TimerTab timer={timer} setTimer={setTimer} ambient={ambient} setAmbient={setAmbient} />,
+    rooms: <RoomsTab me={me} seated={seated} setSeated={setSeated} timer={timer} gain={gain} />,
+    challenges: <ChallengesTab me={me} running={timer.running || seated} gain={gain} />,
+  }[tab];
+
+  return (
+    <div className="h-full flex items-center justify-center sm:p-6">
+      <div className="relative w-full max-w-[430px] h-full sm:max-h-[860px] sm:rounded-[44px] sm:border-[10px] sm:border-ink bg-cream overflow-hidden flex flex-col shadow-2xl">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(500px 300px at 0% -5%, rgba(251,146,60,.20), transparent 60%), radial-gradient(400px 300px at 110% 30%, rgba(251,191,36,.14), transparent 60%)' }} />
+        <Header me={me} unread={notifs.length} onBell={() => setBell(true)} />
+        <div className="relative flex-1 min-h-0 scroll px-4 pt-5 pb-6">
+          <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .22 }}>{page}</motion.div></AnimatePresence>
+        </div>
+        <BottomNav tab={tab} setTab={setTab} />
+        <div id="sheet-root" className="absolute inset-0 z-50 pointer-events-none" />
+        <Toasts list={toasts} />
+        <Sheet open={bell} onClose={() => { setBell(false); setNotifs([]); }} title="Notifications 🔔">
+          {notifs.length ? notifs.map((n) => <div key={n} className="rounded-2xl bg-white border border-orange-100 px-4 py-3 text-sm font-semibold mb-2">{n}</div>) : <div className="text-center text-stone-500 py-6 text-sm">Kol chay 9rit 👏</div>}
+        </Sheet>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

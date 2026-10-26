@@ -102,7 +102,7 @@ function broadcast(room, msg, except) {
 
 function playerView(ws) {
   const u = ws.user;
-  return { id: u.uid, name: u.name, color: u.color, hat: u.hat, photo: u.photo || null, look: u.look || null, level: u.level, x: ws.x, y: ws.y, dir: ws.dir, moving: false, status: ws.status };
+  return { id: u.uid, name: u.name, color: u.color, hat: u.hat, photo: u.photo || null, look: u.look || null, level: u.level, x: ws.x, y: ws.y, dir: ws.dir, moving: false, sit: !!ws.sit, sitFace: ws.sitFace || null, status: ws.status };
 }
 
 function distance(a, b) {
@@ -192,7 +192,9 @@ const handlers = {
     ws.x = clampNum(msg.x, 0, MAP_W, ws.x);
     ws.y = clampNum(msg.y, 0, MAP_H, ws.y);
     if (DIRS.includes(msg.dir)) ws.dir = msg.dir;
-    broadcast(ws.room, { t: 'move', id: ws.user.uid, x: ws.x, y: ws.y, dir: ws.dir, moving: !!msg.moving }, ws);
+    ws.sit = !!msg.sit;
+    ws.sitFace = DIRS.includes(msg.sitFace) ? msg.sitFace : null;
+    broadcast(ws.room, { t: 'move', id: ws.user.uid, x: ws.x, y: ws.y, dir: ws.dir, moving: !!msg.moving, sit: ws.sit, sitFace: ws.sitFace }, ws);
   },
 
   chat(ws, msg) {
@@ -212,6 +214,18 @@ const handlers = {
   emote(ws, msg) {
     if (!EMOTES.includes(msg.e) || rateLimited(ws, 'emote', 3, 2000)) return;
     broadcast(ws.room, { t: 'emote', id: ws.user.uid, e: msg.e });
+  },
+
+  // "👋 Sallem" (hello) or "➕ Zid" (invite to my study group) sent to one player in the room.
+  poke(ws, msg) {
+    const kind = msg.kind === 'invite' ? 'invite' : 'hello';
+    const code = kind === 'invite' ? String(msg.code || '').toUpperCase() : '';
+    if (kind === 'invite' && !/^[A-Z0-9]{6}$/.test(code)) return;
+    if (rateLimited(ws, 'poke', 4, 10000)) return send(ws, { t: 'error', msg: 'Bechwaya 3lihom 🙂' });
+    const target = [...ws.room.clients].find((c) => c.user.uid === Number(msg.to));
+    if (!target || target === ws) return;
+    send(target, { t: 'poke', kind, code, group: String(msg.group || '').slice(0, 40), from: { id: ws.user.uid, name: ws.user.name } });
+    broadcast(ws.room, { t: 'emote', id: ws.user.uid, e: kind === 'invite' ? '🎉' : '👋' });
   },
 
   // Owner of a private room changed its decoration (already saved through the PHP API): show it live to everyone.

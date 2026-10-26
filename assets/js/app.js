@@ -866,16 +866,18 @@ function setupPersoEditor() {
 // ---------- Tabs ----------
 function showTab(name) {
   if (!$(`[data-panel="${name}"]`)) name = 'focus';
-  $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  $$('button[data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   $$('.tab-panel').forEach((p) => { p.hidden = p.dataset.panel !== name; });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'profile' && draftLook) renderPersoEditor();
   const loaders = { leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, quests: loadTasks, missions: loadMissions, challenges: loadChallenges, rooms: loadPrivateRooms };
   loaders[name]?.().catch((e) => toast(e.message, 'bad'));
 }
 
 function setupTabs() {
-  $('#tabs').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-tab]');
+  // Bottom navigation + "more pages" pills share the same data-tab buttons.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
     if (b) location.hash = b.dataset.tab;
   });
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));

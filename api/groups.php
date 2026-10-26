@@ -133,7 +133,8 @@ route([
                      WHERE f.user_id = u.id AND f.status IN ('completed','partial') AND f.ended_at >= ?) AS today,
                     (SELECT COALESCE(SUM(f.credited_seconds), 0) FROM focus_sessions f
                      WHERE f.user_id = u.id AND f.status IN ('completed','partial') AND f.ended_at >= ?) AS week,
-                    a.subject AS studying, a.started_at AS studying_since, a.planned_minutes AS studying_planned
+                    a.subject AS studying, a.started_at AS studying_since, a.planned_minutes AS studying_planned,
+                    a.paused_seconds AS studying_paused, a.paused_at AS studying_paused_at
              FROM group_members gm
              JOIN users u ON u.id = gm.user_id
              LEFT JOIN focus_sessions a ON a.user_id = u.id AND a.status = 'active' AND a.last_ping_at >= ?
@@ -148,10 +149,12 @@ route([
             $m['photo'] = photo_url($m['photo']);
             $m['look'] = clean_look($m['look']);
             // Seconds already studied in the running session, so the UI can tick live (YPT style).
+            $paused = (int) $m['studying_paused'] + ($m['studying_paused_at'] ? time() - strtotime($m['studying_paused_at']) : 0);
             $m['live_seconds'] = $m['studying_since']
-                ? min(time() - strtotime($m['studying_since']), (int) $m['studying_planned'] * 60)
+                ? max(0, min(time() - strtotime($m['studying_since']) - $paused, (int) $m['studying_planned'] * 60))
                 : 0;
-            unset($m['studying_since'], $m['studying_planned']);
+            $m['paused'] = (bool) $m['studying_paused_at'];
+            unset($m['studying_since'], $m['studying_planned'], $m['studying_paused'], $m['studying_paused_at']);
         }
         unset($m);
 

@@ -19,15 +19,22 @@ function active_session(int $uid): ?array
     return $st->fetch() ?: null;
 }
 
+/** Seconds actually studied so far: wall time since start minus pauses (including a pause in progress). */
+function studied_seconds(array $s): int
+{
+    $paused = (int) $s['paused_seconds'] + ($s['paused_at'] ? time() - strtotime($s['paused_at']) : 0);
+    return max(0, time() - strtotime($s['started_at']) - $paused);
+}
+
 function session_view(array $s): array
 {
-    $elapsed = time() - strtotime($s['started_at']);
     return [
         'id'              => (int) $s['id'],
         'subject'         => $s['subject'],
         'planned_minutes' => (int) $s['planned_minutes'],
         'strict'          => (bool) $s['strict'],
-        'remaining'       => (int) $s['planned_minutes'] * 60 - $elapsed,
+        'paused'          => $s['paused_at'] !== null,
+        'remaining'       => (int) $s['planned_minutes'] * 60 - studied_seconds($s),
         'mission'         => $s['mission_id'] ? ['id' => (int) $s['mission_id'], 'title' => $s['mission_title']] : null,
     ];
 }
@@ -118,7 +125,7 @@ route([
 
         $strict = (bool) $s['strict'];
         $planned = (int) $s['planned_minutes'] * 60;
-        $elapsed = time() - strtotime($s['started_at']);
+        $elapsed = studied_seconds($s); // pauses don't count as study time
         $full = $elapsed >= $planned - FINISH_TOLERANCE;
 
         if ($strict && !$full) {
@@ -154,6 +161,31 @@ route([
             'events'  => $events,
             'profile' => profile($uid),
         ]);
+    },
+
+    // Flexible sessions only: a pause freezes the timer (strict mode has no pause, like Flip).
+    'pause' => function (): void {
+        $uid = (int) require_user()['id'];
+        $s = active_session($uid);
+        if (!$s) fail('Ma 3andekch session 9raya ma7loula.');
+        if ((bool) $s['strict']) fail('Fel mode sarem ma fammech pause 😤');
+        if ($s['paused_at'] === null) {
+            db()->prepare('UPDATE focus_sessions SET paused_at = ? WHERE id = ? AND paused_at IS NULL')->execute([now(), $s['id']]);
+        }
+        respond(['session' => session_view(active_session($uid))]);
+    },
+
+    'resume' => function (): void {
+        $uid = (int) require_user()['id'];
+        $s = active_session($uid);
+        if (!$s) fail('Ma 3andekch session 9raya ma7loula.');
+        if ($s['paused_at'] !== null) {
+            db()->prepare(
+                'UPDATE focus_sessions SET paused_seconds = paused_seconds + GREATEST(0, TIMESTAMPDIFF(SECOND, paused_at, ?)), paused_at = NULL
+                 WHERE id = ? AND paused_at IS NOT NULL'
+            )->execute([now(), $s['id']]);
+        }
+        respond(['session' => session_view(active_session($uid))]);
     },
 
     'fail' => function (): void {

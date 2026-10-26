@@ -9,9 +9,9 @@ git config --global --add safe.directory "$APP_DIR" || true
 cd "$APP_DIR"
 /usr/local/bin/rayaverse-backup || true        # backup first, just in case
 git pull --ff-only
+mysql rayaverse < "$APP_DIR/deploy/migrations.sql"   # new columns/tables, keeps all data
 (cd ws-server && npm install --omit=dev --no-audit --no-fund)
 chown -R www-data:www-data "$APP_DIR"
 systemctl restart rayaverse-ws
 systemctl reload nginx
 echo "✅ 9rayaverse mis à jour."
-echo "ℹ️  Ken l'update fih tables jdod fel base, l'README mta3 l'version y9ollek chnowa ta3mel."

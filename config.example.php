@@ -11,8 +11,8 @@ define('DB_PASS', '');
 
 define('WS_SECRET', 'put-a-long-random-secret-here');
 define('WS_PORT', 8080);
-// Public path of the real-time server behind the web server (production: '/ws').
-// Empty = connect straight to ws://<host>:WS_PORT (local XAMPP).
+// Path of the real-time server behind the web server: '/ws' (Nginx server), 'ws' (XAMPP + tunnel).
+// Empty = connect straight to ws://<host>:WS_PORT.
 define('WS_PUBLIC_URL', '');
 
 // true = show technical error details (local only). Keep false on a public server.

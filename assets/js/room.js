@@ -74,6 +74,7 @@ let ws = null;
 let wsToken = null;
 let wsPort = 8080;
 let wsPath = '';
+let view3d = null; // Room3D instance when the 3D view is on (see room3d.js)
 let clockOffset = 0;
 let roomTimer = null;
 let chatScope = 'near';
@@ -276,6 +277,7 @@ function drawMap() {
     }
   }
   d.globalCompositeOperation = 'source-over';
+  view3d?.build(theme, themeName, decor);
 }
 
 // ---------- Dynamic rendering ----------
@@ -409,6 +411,10 @@ function drawOverlay(p, t, hideBubbles) {
 }
 
 function render(t) {
+  if (view3d) {
+    view3d.frame(players, me, t, { now: serverNow(), near: NEAR, hideBubbles: zone.quiet });
+    return;
+  }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.drawImage(mapLayer.c, 0, 0, W, H);
 
@@ -461,6 +467,7 @@ function update(dt) {
     if (keys.has('up')) dy -= 1;
     if (keys.has('down')) dy += 1;
     const moving = dx !== 0 || dy !== 0;
+    if (moving && me.sit) standUp(); // walking away gets you out of the chair
     if (moving) {
       const len = Math.hypot(dx, dy);
       const nx = me.x + (dx / len) * SPEED * dt;
@@ -488,9 +495,64 @@ function update(dt) {
 }
 
 function sendMove() {
-  send({ t: 'move', x: Math.round(me.x), y: Math.round(me.y), dir: me.dir, moving: me.moving });
+  send({ t: 'move', x: Math.round(me.x), y: Math.round(me.y), dir: me.dir, moving: me.moving, sit: !!me.sit, sitFace: me.sitFace || null });
   lastSent = performance.now();
   lastSentPos = { x: me.x, y: me.y, moving: me.moving };
+}
+
+// ---------- Sitting (🪑 O93od) ----------
+// Seats: chairs under desks, floor tiles next to tables, and sofas. "face" = where you look when seated.
+const SEATS = (() => {
+  const seats = [];
+  const around = [['up', 0, -1], ['down', 0, 1], ['left', -1, 0], ['right', 1, 0]];
+  for (let y = 1; y < ROWS - 1; y++) {
+    for (let x = 1; x < COLS - 1; x++) {
+      const t = tileAt(x, y);
+      if (t === 'c') seats.push({ x, y, face: 'up' });
+      else if (t === 'S') seats.push({ x, y, face: tileAt(x + 1, y) === 'R' ? 'right' : tileAt(x - 1, y) === 'R' ? 'left' : 'down' });
+      else if (t === '.') {
+        const near = around.find(([, dx, dy]) => tileAt(x + dx, y + dy) === 'T');
+        if (near) seats.push({ x, y, face: near[0] });
+      }
+    }
+  }
+  return seats;
+})();
+
+function toggleSit() {
+  if (!me) return;
+  if (me.sit) { standUp(); return; }
+  const taken = new Set([...players.values()].filter((p) => p !== me && p.sit).map((p) => `${Math.floor(p.x / TILE)},${Math.floor(p.y / TILE)}`));
+  const free = SEATS.filter((s) => !taken.has(`${s.x},${s.y}`) && !decorSolid.has(`${s.x},${s.y}`));
+  if (!free.length) return toast('Ma fammech blasa fergha 😅', 'info');
+  free.sort((a, b) => Math.hypot((a.x + 0.5) * TILE - me.x, (a.y + 0.5) * TILE - me.y) - Math.hypot((b.x + 0.5) * TILE - me.x, (b.y + 0.5) * TILE - me.y));
+  const s = free[0];
+  Object.assign(me, { x: (s.x + 0.5) * TILE, y: (s.y + 0.5) * TILE - 4, sit: true, sitFace: s.face, dir: s.face, moving: false });
+  sendMove();
+  renderSitButton();
+}
+
+function standUp() {
+  if (!me?.sit) return;
+  me.sit = false;
+  me.sitFace = null;
+  if (blocked(me.x, me.y)) {
+    // stepped off a sofa: find the closest free spot around it
+    const spots = [];
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) spots.push([me.x + dx * TILE, me.y + dy * TILE]);
+    spots.sort((a, b) => Math.hypot(a[0] - me.x, a[1] - me.y) - Math.hypot(b[0] - me.x, b[1] - me.y));
+    const ok = spots.find(([x, y]) => !blocked(x, y));
+    if (ok) [me.x, me.y] = ok;
+  }
+  sendMove();
+  renderSitButton();
+}
+
+function renderSitButton() {
+  const b = $('#sit-btn');
+  if (!b) return;
+  b.innerHTML = me?.sit ? '🚶 9oum' : '🪑 O93od';
+  b.classList.toggle('seated', !!me?.sit);
 }
 
 function enterZone(z) {
@@ -559,8 +621,10 @@ async function connect() {
   }
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  // Production goes through the web server (wss://site/ws); local XAMPP talks to the Node port directly.
-  ws = new WebSocket(wsPath ? `${proto}://${location.host}${wsPath}` : `${proto}://${location.hostname}:${wsPort}`);
+  // Through the web server (wss://site/ws) when configured; otherwise straight to the Node port.
+  // A relative path ("ws") is resolved next to this page, so /9rayaverse/ws and /ws both work.
+  const path = wsPath.startsWith('/') ? wsPath : location.pathname.replace(/[^/]*$/, '') + wsPath;
+  ws = new WebSocket(wsPath ? `${proto}://${location.host}${path}` : `${proto}://${location.hostname}:${wsPort}`);
   ws.onopen = () => {
     reconnectDelay = 1000;
     ws.send(JSON.stringify({ t: 'auth', token: wsToken, room: roomId }));
@@ -616,7 +680,7 @@ function handle(m) {
       break;
     case 'move': {
       const p = players.get(m.id);
-      if (p) Object.assign(p, { tx: m.x, ty: m.y, dir: m.dir, moving: m.moving });
+      if (p) Object.assign(p, { tx: m.x, ty: m.y, dir: m.dir, moving: m.moving, sit: !!m.sit, sitFace: m.sitFace || null });
       break;
     }
     case 'chat': {
@@ -630,6 +694,9 @@ function handle(m) {
       if (p) p.emote = { e: m.e, start: performance.now() };
       break;
     }
+    case 'poke':
+      showPoke(m);
+      break;
     case 'status': {
       clockOffset = m.serverNow - Date.now();
       const p = players.get(m.id);
@@ -706,19 +773,103 @@ function setupChat() {
   });
 }
 
-// ---------- People ----------
+// ---------- People (Lilo-style cards with Sallem / Zid) ----------
+let peopleKey = '';
+let myGroup = null; // {name, code} — the study group I invite people to with "➕ Zid"
+
+function statusTag(p) {
+  const s = p.status?.state;
+  if (s === 'focus') {
+    return `<span class="chip tag-study"><span class="live-dot"></span> Ya9ra${p.status.subject ? ': ' + esc(p.status.subject) : ''}</span>
+      <span class="chip" data-left="${p.id}">⏱️ ${fmtClock((p.status.until - serverNow()) / 1000)}</span>`;
+  }
+  if (s === 'break') return '<span class="chip violet">☕ Fi pause</span>';
+  return '<span class="chip">😴 Yetmacha</span>';
+}
+
 function renderPeople() {
   const list = [...players.values()].sort((a, b) => (a === me ? -1 : b === me ? 1 : me ? dist(a, me) - dist(b, me) : 0));
   $('#hud-online').textContent = `👥 ${players.size} connectés`;
-  $('#people').innerHTML = list.map((p) => {
-    const near = me && p !== me && dist(p, me) <= NEAR;
-    const st = p.status?.state === 'focus'
-      ? `🔥 Ya9ra${p.status.subject ? ' ' + esc(p.status.subject) : ''} · ba9i ${fmtClock((p.status.until - serverNow()) / 1000)}`
-      : p.status?.state === 'break' ? '☕ Fi pause' : 'Yetmacha';
-    return `<div class="person">${avatarHTML(p.color, p.hat, 'sm', p.photo, p.look)}
-      <div class="grow"><b>${esc(p.name)}</b> ${p === me ? '<span class="chip">Enti</span>' : ''} ${near ? '<span class="chip good">📍 9rib</span>' : ''}
-      <div class="sub">Nv ${p.level} · ${st}</div></div></div>`;
-  }).join('') || '<div class="empty">7atta wa7ed hna mazel.</div>';
+  // Rebuild the cards only when something visible changed (keeps buttons clickable), tick timers otherwise.
+  const key = JSON.stringify(list.map((p) => [p.id, p.level, p.status?.state, p.status?.subject, me && p !== me && dist(p, me) <= NEAR, p.look, p.photo, p.hat]));
+  if (key !== peopleKey) {
+    peopleKey = key;
+    $('#people').innerHTML = list.map((p) => {
+      const near = me && p !== me && dist(p, me) <= NEAR;
+      return `<div class="pcard ${p === me ? 'me' : ''}">
+        ${avatarHTML(p.color, p.hat, 'md', p.photo, p.look)}
+        <div>
+          <div class="nm">${esc(p.name)} <span class="chip violet">⭐ Nv ${p.level}</span>${p === me ? '<span class="chip pink">Enti</span>' : ''}${near ? '<span class="chip good">📍 9rib</span>' : ''}</div>
+          <div class="tags">${statusTag(p)}</div>
+        </div>
+        ${p === me ? '' : `<div class="acts">
+          <button class="btn sm" data-poke="hello" data-to="${p.id}">👋 Sallem</button>
+          <button class="btn sm primary" data-poke="invite" data-to="${p.id}">➕ Zid lel jme3a</button>
+        </div>`}
+      </div>`;
+    }).join('') || '<div class="empty">7atta wa7ed hna mazel.</div>';
+  } else {
+    for (const p of list) {
+      const el = $(`[data-left="${p.id}"]`);
+      if (el && p.status?.state === 'focus') el.textContent = `⏱️ ${fmtClock((p.status.until - serverNow()) / 1000)}`;
+    }
+  }
+}
+
+function setupPeople() {
+  $('#people').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-poke]');
+    if (!b) return;
+    const to = Number(b.dataset.to);
+    const name = players.get(to)?.name || '';
+    if (b.dataset.poke === 'hello') {
+      send({ t: 'poke', kind: 'hello', to });
+      toast(`👋 Sallemt 3la ${name}`, 'good', 2500);
+    } else if (!myGroup) {
+      toast('A3mel jme3a 9bal (👥 Jme3ti fel dashboard) bech tzid fiha s7abek.', 'info', 5000);
+    } else {
+      send({ t: 'poke', kind: 'invite', to, code: myGroup.code, group: myGroup.name });
+      toast(`🎉 Ba3atht invitation l ${name} lel jme3a "${myGroup.name}"`, 'good', 3500);
+    }
+  });
+}
+
+/** Someone said hello or invited me to their group: a toast with an action. */
+function showPoke(m) {
+  let box = $('.toasts');
+  if (!box) { box = document.createElement('div'); box.className = 'toasts'; document.body.appendChild(box); }
+  const el = document.createElement('div');
+  el.className = 'toast gold';
+  if (m.kind === 'invite') {
+    el.innerHTML = `🎉 <b>${esc(m.from.name)}</b> y7eb yzidek lel jme3a <b>"${esc(m.group)}"</b>
+      <div class="row"><button class="btn sm primary" data-accept>➕ Od5ol</button><button class="btn sm ghost" data-close>Ba3d</button></div>`;
+  } else {
+    el.innerHTML = `👋 <b>${esc(m.from.name)}</b> sallem 3lik!
+      <div class="row"><button class="btn sm" data-wave>👋 Raddlou</button><button class="btn sm ghost" data-close>✖</button></div>`;
+  }
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+  el.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-close]')) close();
+    if (e.target.closest('[data-wave]')) { send({ t: 'poke', kind: 'hello', to: m.from.id }); close(); }
+    if (e.target.closest('[data-accept]')) {
+      try {
+        await API.call('groups', 'join', { code: m.code });
+        toast(`✅ Dkhalt lel jme3a "${m.group}"!`, 'good');
+      } catch (err) { toast(err.message, 'bad'); }
+      close();
+    }
+  });
+  box.appendChild(el);
+  setTimeout(close, 15000);
+}
+
+async function loadMyGroup() {
+  try {
+    const { groups } = await API.call('groups', 'mine');
+    const here = /^g(\d+)$/.exec(roomId);
+    const g = (here && groups.find((x) => x.id === Number(here[1]))) || groups[0];
+    myGroup = g ? { name: g.name, code: g.invite_code } : null;
+  } catch { myGroup = null; }
 }
 
 // ---------- Room timer ----------
@@ -868,6 +1019,14 @@ function renderEditor() {
     <button class="btn sm ghost" id="decor-clear">🗑️ Na77i l'dicor lkol</button>`;
 }
 
+/** Map tile under the mouse, in 3D (ray on the floor) or 2D (canvas pixels). */
+function pickTile(e) {
+  if (view3d) return view3d.pickTile(e.clientX, e.clientY);
+  const rect = canvas.getBoundingClientRect();
+  if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return null;
+  return { tx: Math.floor(((e.clientX - rect.left) / rect.width) * COLS), ty: Math.floor(((e.clientY - rect.top) / rect.height) * ROWS) };
+}
+
 function setupEditor() {
   const box = $('#decor-panel');
   renderEditor();
@@ -880,11 +1039,12 @@ function setupEditor() {
     if (e.target.id === 'edit-toggle') setEditMode(e.target.checked);
     if (e.target.id === 'theme-select') { themeName = e.target.value; theme = THEMES[themeName]; decorChanged(); }
   });
-  canvas.addEventListener('click', (e) => {
-    if (!editor.on) return;
-    const rect = canvas.getBoundingClientRect();
-    const tx = Math.floor(((e.clientX - rect.left) / rect.width) * COLS);
-    const ty = Math.floor(((e.clientY - rect.top) / rect.height) * ROWS);
+  $('#stage').addEventListener('pointermove', (e) => { if (view3d) view3d.showHover(editor.on ? pickTile(e) : null); });
+  $('#stage').addEventListener('click', (e) => {
+    if (!editor.on || e.target.closest('button')) return;
+    const tile = pickTile(e);
+    if (!tile) return;
+    const { tx, ty } = tile;
     const i = decor.findIndex((d) => d.x === tx && d.y === ty);
     if (editor.tool === 'erase') {
       if (i < 0) return;
@@ -939,6 +1099,64 @@ async function loadPrivateRoom() {
   }
 }
 
+// ---------- 3D / 2D view + room controls (Lilo-style) ----------
+function setupView() {
+  const want3d = store.get('view3d', true);
+  if (want3d && typeof Room3D !== 'undefined' && Room3D.supported()) {
+    try {
+      view3d = new Room3D($('#stage'), { map: MAP, tile: TILE, theme, themeName, decor });
+      canvas.hidden = true;
+    } catch (e) {
+      console.warn('3D view failed, using 2D', e);
+      view3d = null;
+    }
+  }
+  $('#view-toggle').textContent = view3d ? '🗺️ 2D' : '🧊 3D';
+  $('#zoom-in').hidden = $('#zoom-out').hidden = !view3d;
+}
+
+async function openRoomPicker() {
+  const items = [
+    ['library', '📚 Maktbet Lil'], ['cafe', '☕ 9ahwet Sidi Bou'], ['forest', '🌲 Dar fi 3in Draham'], ['pink', '🌸 Bit Wardi'],
+  ];
+  try {
+    const [{ groups }, { rooms }] = await Promise.all([API.call('groups', 'mine'), API.call('rooms', 'mine')]);
+    groups.forEach((g) => items.push([`g${g.id}`, `👥 ${g.name}`]));
+    rooms.forEach((r) => items.push([r.ws_id, `🔐 ${r.name}`]));
+  } catch { /* public rooms only */ }
+  const back = document.createElement('div');
+  back.className = 'modal-back';
+  back.innerHTML = `<div class="modal"><h2>🔄 Baddel l'sala</h2><div class="list">${items.map(([id, n]) =>
+    `<a class="list-item" style="text-decoration:none;color:inherit" href="room.html?room=${esc(id)}"><span class="grow title">${esc(n)}</span>${id === roomId ? '<span class="chip pink">Enti hna</span>' : '→'}</a>`).join('')}</div>
+    <button class="btn ghost mt" data-close>Sakker</button></div>`;
+  back.addEventListener('click', (e) => { if (e.target === back || e.target.closest('[data-close]')) back.remove(); });
+  document.body.appendChild(back);
+}
+
+function setupRoomControls() {
+  $('#sit-btn').addEventListener('click', () => toggleSit());
+  $('#look-btn').addEventListener('click', () => { location.href = 'app.html#profile'; });
+  $('#room-switch').addEventListener('click', openRoomPicker);
+  $('#zoom-in').addEventListener('click', () => view3d?.setZoom(view3d.zoom * 0.8));
+  $('#zoom-out').addEventListener('click', () => view3d?.setZoom(view3d.zoom * 1.25));
+  $('#fullscreen').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else $('#stage').requestFullscreen?.().catch(() => toast('Plein écran mouch mawjoud fel navigateur hedha.', 'info'));
+  });
+  $('#view-toggle').addEventListener('click', () => {
+    store.set('view3d', !view3d);
+    location.reload();
+  });
+  window.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.code === 'KeyE') toggleSit();
+    if (e.code === 'Equal' || e.code === 'NumpadAdd') view3d?.setZoom(view3d.zoom * 0.8);
+    if (e.code === 'Minus' || e.code === 'NumpadSubtract') view3d?.setZoom(view3d.zoom * 1.25);
+  });
+  renderSitButton();
+}
+
 // ---------- Boot ----------
 (async function init() {
   canvas.width = W * DPR;
@@ -951,12 +1169,16 @@ async function loadPrivateRoom() {
       return;
     }
   }
+  setupView();
   drawMap();
   setupInput();
   setupChat();
   setupTimer();
+  setupPeople();
+  setupRoomControls();
   Ambience.render($('#vibes'));
   requestAnimationFrame(loop);
+  loadMyGroup();
 
   try {
     profile = await API.call('auth', 'me');
@@ -968,7 +1190,12 @@ async function loadPrivateRoom() {
 
   focusTimer = new FocusTimer($('#room-focus'), {
     compact: true,
-    onState: (s) => { myStatus = s; sendStatus(); },
+    onState: (s) => {
+      // Starting to study sits you down at the nearest free desk, like in a real library.
+      if (s.state === 'focus' && myStatus.state === 'idle' && me && !me.sit) toggleSit();
+      myStatus = s;
+      sendStatus();
+    },
     onResult: (r) => {
       if (r.profile) { profile = r.profile; renderTop(); }
       else API.call('auth', 'me').then((p) => { profile = p; renderTop(); }).catch(() => {});

@@ -38,6 +38,7 @@ class FocusTimer {
   }
 
   remaining() {
+    if (this.paused) return this.frozenLeft;
     return Math.max(0, (this.endAt - Date.now()) / 1000);
   }
 
@@ -150,14 +151,45 @@ class FocusTimer {
   // ---------- local state ----------
   begin(session) {
     this.session = session;
-    this.endAt = Date.now() + session.remaining * 1000;
+    this.applyTiming(session);
     this.renderRunning();
     clearInterval(this.tickTimer);
     clearInterval(this.pingTimer);
     this.tickTimer = setInterval(() => this.tick(), 250);
     this.pingTimer = setInterval(() => this.ping(), PING_INTERVAL_MS);
     this.tick();
-    this.onState({ state: 'focus', remaining: session.remaining, subject: session.subject });
+    this.announce();
+  }
+
+  /** Syncs the local countdown with the server (remaining seconds + paused flag). */
+  applyTiming(session) {
+    this.paused = !!session.paused;
+    this.frozenLeft = Math.max(0, session.remaining);
+    this.endAt = Date.now() + session.remaining * 1000;
+  }
+
+  announce() {
+    const s = this.session;
+    if (this.paused) this.onState({ state: 'break', remaining: 0, subject: s.subject });
+    else this.onState({ state: 'focus', remaining: this.remaining(), subject: s.subject });
+  }
+
+  async togglePause() {
+    if (this.busy || !this.session || this.session.strict) return;
+    this.busy = true;
+    try {
+      const r = await API.call('focus', this.paused ? 'resume' : 'pause');
+      this.session = { ...this.session, ...r.session };
+      this.applyTiming(r.session);
+      this.renderRunning();
+      this.tick();
+      this.announce();
+      toast(this.paused ? '⏸ Pause. Erta7 chwaya w arja3 ☕' : '▶ Yallah nkamlou!', 'info', 2500);
+    } catch (e) {
+      toast(e.message, 'bad');
+    } finally {
+      this.busy = false;
+    }
   }
 
   end() {
@@ -180,8 +212,8 @@ class FocusTimer {
     if (ring) ring.style.strokeDashoffset = String(RING_C * (1 - left / total));
     const pdfTimer = $('#pdf-timer');
     if (pdfTimer) pdfTimer.textContent = `⏱️ ${fmtClock(left)}${this.session.strict ? ' · 🔒 sarem' : ''}`;
-    document.title = `${fmtClock(left)} · ${this.session.subject} · 9rayaverse`;
-    if (left <= 0 && Date.now() >= (this.retryAt || 0)) this.finish();
+    document.title = `${this.paused ? '⏸ ' : ''}${fmtClock(left)} · ${this.session.subject} · 9rayaverse`;
+    if (!this.paused && left <= 0 && Date.now() >= (this.retryAt || 0)) this.finish();
   }
 
   onVisibility() {
@@ -244,11 +276,11 @@ class FocusTimer {
   renderRunning() {
     const s = this.session;
     this.root.innerHTML = `
-      <div class="ft-running ${s.strict ? 'strict' : ''}">
+      <div class="ft-running ${s.strict ? 'strict' : ''} ${this.paused ? 'paused' : ''}">
         <div class="ring">
           <svg viewBox="0 0 200 200" aria-hidden="true">
             <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="${s.strict ? '#ff8a5c' : '#8b6cff'}"/><stop offset="1" stop-color="${s.strict ? '#ff5d8f' : '#4cc9f0'}"/>
+              <stop offset="0" stop-color="${s.strict ? '#f97316' : '#fbbf24'}"/><stop offset="1" stop-color="${s.strict ? '#dc2626' : '#ea580c'}"/>
             </linearGradient></defs>
             <circle class="ring-bg" cx="100" cy="100" r="90"/>
             <circle class="ring-fg" cx="100" cy="100" r="90" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/>
@@ -256,17 +288,23 @@ class FocusTimer {
           <div class="ring-text"><div class="ft-time">--:--</div><div class="ft-sub">${esc(s.subject)}</div></div>
         </div>
         <div class="row" style="margin-bottom:12px">
-          ${s.strict ? '<span class="chip warm">🔒 Mode sarem</span>' : '<span class="chip good">🌿 Mode 3adi</span>'}
+          ${this.paused ? '<span class="chip violet">⏸ Pause</span>' : s.strict ? '<span class="chip warm">🔒 Mode sarem</span>' : '<span class="chip pink"><span class="live-dot" style="background:var(--accent)"></span> Ya9ra tawa</span>'}
           <span class="chip">${s.planned_minutes} min</span>
           ${s.mission ? `<span class="chip gold">📚 ${esc(s.mission.title)}</span>` : ''}
         </div>
-        ${s.mission ? '<button class="btn primary ft-pdf" style="margin-bottom:10px">📖 7ell l\'cours (PDF)</button><br>' : ''}
-        ${s.strict
-          ? '<button class="btn danger ft-giveup">🏳️ Nsallem (tekhsar sa77a)</button><p class="hint mt">Ab9a fel page. L\'ghoul yetfarrej fik… 👀 (tnajjem t7ell l\'PDF, howa fel page)</p>'
-          : '<button class="btn ft-stop">⏹ Wa9ef w sajjel</button><p class="hint mt">Ken to9ef 9bal l\'wa9t, ytsajjel l\'wa9t elli 9rit ama bla bonus.</p>'}
+        <div class="ft-controls">
+          ${s.mission ? '<button class="btn ft-pdf">📖 7ell l\'cours</button>' : ''}
+          ${s.strict
+            ? '<button class="btn danger ft-giveup">🏳️ Nsallem</button>'
+            : `<button class="btn primary ft-pause">${this.paused ? '▶ Kammel' : '⏸ Pause'}</button><button class="btn ft-stop">⏹ Wa9ef w sajjel</button>`}
+        </div>
+        <p class="hint mt">${s.strict
+          ? 'Mode sarem: ma fammech pause. Ab9a fel page, l\'ghoul yetfarrej fik… 👀 (l\'PDF y7ell fel page)'
+          : 'Wa9t l\'pause ma yet7sebch. Ken to9ef 9bal l\'wa9t, ytsajjel elli 9rito ama bla bonus.'}</p>
       </div>`;
 
     $('.ft-pdf', this.root)?.addEventListener('click', () => openPdf(`api/file.php?type=mission&id=${s.mission.id}`, s.mission.title));
+    $('.ft-pause', this.root)?.addEventListener('click', () => this.togglePause());
     $('.ft-giveup', this.root)?.addEventListener('click', () => {
       if (confirm('Bech tsallem? Tekhsar men sa77tek.')) this.fail('Sallemt.');
     });

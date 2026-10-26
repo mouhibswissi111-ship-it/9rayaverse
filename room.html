@@ -6,10 +6,10 @@
   <title>Sala · 9rayaverse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=5">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0e0a1c">
+  <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="9rayaverse">
   <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
@@ -19,9 +19,10 @@
   <header class="topbar">
     <a class="btn ghost sm" href="app.html#rooms">← Arja3</a>
     <div>
-      <div class="logo" id="room-name" style="font-size:11px">Qa3din nconnectiw…</div>
+      <div class="logo" id="room-name" style="font-size:16px">Qa3din nconnectiw…</div>
     </div>
     <button class="chip gold" id="room-code" hidden title="Copi l'code"></button>
+    <button class="btn sm primary" id="room-switch">🔄 Baddel l'sala</button>
     <div class="room-top-stats" id="top-stats"></div>
   </header>
 
@@ -32,6 +33,16 @@
         <span class="chip" id="hud-online">👥 0 connectés</span>
         <span class="chip" id="hud-zone">📍 L'couloir</span>
         <span class="chip" id="hud-timer">⏱️ --:--</span>
+      </div>
+      <div class="stage-ctrl">
+        <button id="zoom-in" title="Zoom (+)">＋</button>
+        <button id="zoom-out" title="Zoom (−)">－</button>
+        <button id="fullscreen" title="Plein écran">⛶</button>
+        <button id="view-toggle" class="txt" title="Baddel 3D / 2D">🗺️ 2D</button>
+      </div>
+      <div class="stage-actions">
+        <button class="btn sm look-btn" id="look-btn">👕 Baddel l'look</button>
+        <button class="btn primary big sit-btn" id="sit-btn">🪑 O93od</button>
       </div>
       <div class="emote-bar" id="emote-bar"></div>
       <div class="dpad" id="dpad">
@@ -74,8 +85,8 @@
       </section>
 
       <section class="side-panel" data-sidepanel="people" hidden>
-        <p class="hint">📍 akhdher = 9rib menek w yesma3 l'chat mta3 "9rib".</p>
-        <div id="people"></div>
+        <p class="hint">📍 = 9rib menek w yesma3 l'chat mta3 "9rib". Sallem 3la s7abek walla zidhom lel jme3a mte3ek 💕</p>
+        <div id="people" class="pcards"></div>
       </section>
 
       <section class="side-panel" data-sidepanel="timer" hidden>
@@ -105,10 +116,13 @@
     </aside>
   </div>
 
-  <script src="assets/js/common.js"></script>
-  <script src="assets/js/avatar.js"></script>
-  <script src="assets/js/focus.js"></script>
-  <script src="assets/js/ambience.js"></script>
-  <script src="assets/js/room.js"></script>
+  <script src="assets/js/common.js?v=4"></script>
+  <script src="assets/js/avatar.js?v=4"></script>
+  <script src="assets/js/focus.js?v=4"></script>
+  <script src="assets/js/ambience.js?v=4"></script>
+  <!-- 3D view (falls back to 2D automatically if this can't load) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <script src="assets/js/room3d.js?v=7"></script>
+  <script src="assets/js/room.js?v=6"></script>
 </body>
 </html>

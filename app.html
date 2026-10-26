@@ -6,10 +6,10 @@
   <title>9rayaverse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=5">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0e0a1c">
+  <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="9rayaverse">
   <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
@@ -17,25 +17,31 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="logo" href="app.html">9raya<span>verse</span></a>
-    <nav class="tabs" id="tabs">
-      <button data-tab="focus">⏱️ 9raya</button>
-      <button data-tab="missions">📚 Missions</button>
-      <button data-tab="quests">📝 Chghol</button>
-      <button data-tab="rooms">🏰 Salat</button>
-      <button data-tab="groups">👥 Jme3ti</button>
-      <button data-tab="challenges">⚔️ Tahadiyet</button>
-      <button data-tab="leaderboard">🏆 Tartib</button>
-      <button data-tab="shop">🛒 Hanout</button>
-      <button data-tab="profile">👤 Profili</button>
-    </nav>
+    <a class="logo" href="app.html"><img src="assets/icons/icon-192.png" alt="">9raya<span>verse</span></a>
+    <span class="grow"></span>
     <button class="btn sm primary" id="install-btn" data-install hidden>📲 Installi l'app</button>
     <a class="btn sm warm" href="admin.html" id="admin-link" hidden>🛠️ Admin</a>
-    <button class="btn ghost sm" id="logout">Okhrej</button>
+    <button class="btn ghost sm" id="logout" title="Okhrej">🚪 Okhrej</button>
   </header>
+
+  <!-- Floating bottom navigation (main pages) -->
+  <nav class="bottom-nav" id="tabs" aria-label="Navigation">
+    <button data-tab="focus"><span class="ico">⏱️</span>9raya</button>
+    <button data-tab="rooms"><span class="ico">🏰</span>Salat</button>
+    <button data-tab="challenges"><span class="ico">⚔️</span>Tahadiyet</button>
+    <button data-tab="leaderboard"><span class="ico">🏆</span>Tartib</button>
+    <button data-tab="profile"><span class="ico">👤</span>Profili</button>
+  </nav>
 
   <main class="container">
     <div class="card player-bar" id="player-bar"><span class="muted">Qa3din njibou l'compte mte3ek…</span></div>
+    <!-- More pages -->
+    <nav class="subnav" aria-label="Pages o5rin">
+      <button data-tab="missions">📚 Missions</button>
+      <button data-tab="quests">📝 Chghol</button>
+      <button data-tab="groups">👥 Jme3ti</button>
+      <button data-tab="shop">🛒 Hanout</button>
+    </nav>
     <div class="alerts" id="alerts"></div>
 
     <!-- 9RAYA (FOCUS) -->
@@ -272,9 +278,9 @@
     </section>
   </main>
 
-  <script src="assets/js/common.js"></script>
-  <script src="assets/js/avatar.js"></script>
-  <script src="assets/js/focus.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/common.js?v=4"></script>
+  <script src="assets/js/avatar.js?v=4"></script>
+  <script src="assets/js/focus.js?v=4"></script>
+  <script src="assets/js/app.js?v=4"></script>
 </body>
 </html>

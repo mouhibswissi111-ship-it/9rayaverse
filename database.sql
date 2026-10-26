@@ -149,6 +149,8 @@ CREATE TABLE focus_sessions (
   status           ENUM('active','completed','partial','failed','abandoned') NOT NULL DEFAULT 'active',
   started_at       DATETIME NOT NULL,
   last_ping_at     DATETIME NOT NULL,
+  paused_at        DATETIME NULL,             -- set while a flexible session is paused
+  paused_seconds   INT NOT NULL DEFAULT 0,    -- total paused time (not counted as study)
   ended_at         DATETIME NULL,
   credited_seconds INT NOT NULL DEFAULT 0,
   xp_earned        INT NOT NULL DEFAULT 0,

@@ -1,6 +1,6 @@
 // Service worker: makes 9rayaverse installable and keeps the app shell available offline.
 // Network-first for everything (always fresh when online); the API and uploads are never cached.
-const CACHE = 'rayaverse-v5';
+const CACHE = 'rayaverse-v6';
 const SHELL = [
   './', 'index.html', 'app.html', 'room.html', 'offline.html',
   'assets/css/style.css',

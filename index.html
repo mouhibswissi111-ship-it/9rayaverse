@@ -2,35 +2,165 @@
 <html lang="aeb">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>9rayaverse — N9raw m3a ba3dhna, w nerb7ou m3a ba3dhna</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>9rayaverse — chkoun ya9ra akther? Timer w salat 9raya m3a s7abek</title>
+  <meta name="description" content="9rayaverse: timer 9raya bilech lel twensa. Tahaddi s7abek, od5ol salat 9raya 3D, sajjel wa9tek w rabba7 XP. Bel Derja.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=5">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=6">
+  <link rel="stylesheet" href="assets/css/landing.css?v=3">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="9rayaverse">
-  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
-  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" href="assets/icons/favicon-32.png?v=2" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png?v=2">
 </head>
-<body data-public="1">
-  <main class="auth-wrap">
-    <section class="auth-hero">
-      <span class="logo">9raya<span>verse</span></span>
-      <h1>N9raw m3a ba3dhna. <em>Nerb7ou XP.</em><br>W n9atlou l'kasla.</h1>
-      <p>Dar 9raya virtuelle lel twensa: kol d9i9a t9raha titsajjel, titrangé fel tartib, w ta3tik XP, flous w dharbet 3al ghilen. Eli ya9ra akther yerba7… w eli yakhser, nochrtou 3lih 😈</p>
-      <ul class="feature-list">
-        <li><span class="ico">🏰</span><div><b>Salat 9raya virtuelles</b><span>Temchi b avatar mte3ek w tahki m3a elli 9rib menek.</span></div></li>
-        <li><span class="ico">📚</span><div><b>Missions PDF</b><span>Habbat les cours mte3ek w 7ott objectif: kammel l'cours bech terba7.</span></div></li>
-        <li><span class="ico">⚔️</span><div><b>Tahaddi l'S7ab + Chorout</b><span>Chkoun ya9ra akther fi jom3a? L'khaser y3mel chart.</span></div></li>
-        <li><span class="ico">⏱️</span><div><b>Tartib par wileya</b><span>Tartib lyoum, hal jom3a w hal chhar — fi Tounes lkol walla fi wilaytek.</span></div></li>
-        <li><span class="ico">🔒</span><div><b>Mode Sarem</b><span>Ken tokhrej mel page, tekhsar. Risque kbir, ghnima kbira.</span></div></li>
-      </ul>
+<body data-public="1" class="lp">
+  <!-- Header -->
+  <header class="lp-head">
+    <a class="lp-brand" href="./"><img src="assets/icons/icon-192.png?v=2" alt="">9raya<span>verse</span></a>
+    <button class="lp-pill ghost" data-install hidden id="install-btn">📲 App</button>
+    <button class="lp-pill" data-auth="login">Od5ol</button>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="lp-hero">
+      <div class="lp-hero-text">
+        <div class="lp-badge">
+          <img src="assets/icons/icon-192.png?v=2" alt="">
+          <div><b>9rayaverse</b><span>🇹🇳 Bilech · bel Derja · 24 wileya</span></div>
+        </div>
+        <h1>chkoun ya9ra<br>akther?<br><span class="lp-outline">YALLAH<br>NEBDEW.</span></h1>
+        <p class="lp-lead">Timer 9raya bilech, 3al téléphone w 3al PC. Tahaddi s7abek, od5ol salat 9raya 3D m3a twensa men kol wileya, w 7afedh 3al streak mte3ek 🔥</p>
+        <button class="lp-cta" data-auth="register">A3mel compte, bilech ✨</button>
+        <p class="lp-sub">3andek compte? <a href="#" data-auth="login">Od5ol</a> · ytsobb kima app 📲</p>
+      </div>
+
+      <div class="lp-hero-visual">
+        <div class="lp-room" id="hero-room">
+          <span class="lp-room-chip"><i class="dot"></i> Maktbet Lil · <b id="room-online">5</b> ya9raw</span>
+        </div>
+        <div class="lp-float-card">
+          <div class="lp-fc-title">🏆 Tahaddi l'jom3a</div>
+          <div class="lp-fc-sub">Akther wa9t 9raya hal jom3a</div>
+          <div class="lp-race" id="hero-race"></div>
+        </div>
+      </div>
     </section>
 
-    <section class="card auth-card">
+    <!-- Live numbers (real, from the database) -->
+    <section class="lp-stats" id="stats">
+      <div class="lp-kicker">Tawa fi 9rayaverse</div>
+      <div class="lp-stat"><b id="st-now">–</b><span>ya9raw tawa</span></div>
+      <div class="lp-stat"><b id="st-today">–</b><span>sa3at 9raya lyoum</span></div>
+      <div class="lp-stat"><b id="st-students">–</b><span>etalb msajlin</span></div>
+    </section>
+
+    <!-- Challenges -->
+    <section class="lp-sec">
+      <div class="lp-kicker">⚔️ Tahadiyet</div>
+      <h2>Tahaddi s7abek.</h2>
+      <p>Ekhtar l'modda, ab3ath l'code lel jme3a, w chouf chkoun ya9ra akther. Kol d9i9a tet7seb, live. W elli yakhser… <b>ya3mel chart</b> 😈</p>
+      <div class="lp-chips">
+        <span>⏱️ Akther wa9t</span><span>📚 Akther missions</span><span>📅 Nhar · jom3a · chhar</span><span>😈 Chorout</span>
+      </div>
+      <div class="lp-card lp-board" id="board"></div>
+      <div class="lp-card lp-dare">
+        <span class="lp-dare-k">🎯 L'chart mta3 elli khser</span>
+        <b>"Tkhalles 9ahwa lel jme3a lkol ☕"</b>
+        <span class="lp-dare-s">✅ amine_kef 3amalha · 📸 preuve</span>
+      </div>
+    </section>
+
+    <!-- Rooms -->
+    <section class="lp-sec">
+      <div class="lp-kicker">🏰 Salat 9raya</div>
+      <h2>N9raw m3a ba3dhna. Win ma kenna.</h2>
+      <p>O93od 7dhe twensa ya9raw men kol blasa, walla 7ell sala ken lik w lel s7ab.</p>
+      <div class="lp-tiles">
+        <div class="lp-tile"><span class="lp-ti">🌍</span><b>Salat publiques</b><span>Dima fama chkoun ya9ra, lil w nhar.</span></div>
+        <div class="lp-tile"><span class="lp-ti">🔐</span><b>Salat privées</b><span>Ken s7abek: code w chat.</span></div>
+        <div class="lp-tile wide"><span class="lp-ti">🎨</span><b>Kima t7eb</b><span>Zayyen salatek w lbes l'perso mte3ek.</span>
+          <div class="lp-decor">📚 🌼 🐈 🧁 🎈 🍵 🌳 🎸 💡 🏆</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timer -->
+    <section class="lp-sec">
+      <div class="lp-kicker">⏱️ Timer</div>
+      <h2>Timer t7eb tchoufou.</h2>
+      <p>Ekhtar 25, 45 walla 60 d9i9a, ch3el lo-fi walla mtar walla kanoun, w ebda. Ken t7eb tahaddi, ch3el <b>Mode Sarem</b>: ken tokhrej mel app, tekhsar 🔒</p>
+      <div class="lp-timer-row">
+        <div class="lp-ring" id="ring"><div class="lp-ring-in"><b id="ring-time">24:56</b><span>Physique</span></div></div>
+        <div class="lp-scenes">
+          <div class="lp-scene s1"><span>☕</span>9ahwa lo-fi</div>
+          <div class="lp-scene s2"><span>🌧️</span>Mtar</div>
+          <div class="lp-scene s3"><span>🔥</span>Kanoun</div>
+          <div class="lp-scene s4"><span>🌊</span>B7ar</div>
+        </div>
+      </div>
+      <div class="lp-chips"><span>🌿 Mode 3adi</span><span>🔒 Mode sarem</span><span>⏸ Pause</span><span>📖 PDF mte3ek</span></div>
+    </section>
+
+    <!-- Missions -->
+    <section class="lp-sec">
+      <div class="lp-kicker">📚 Missions</div>
+      <h2>Habbat l'cours. Kammlou.</h2>
+      <p>7ott l'PDF mte3ek, 7ott objectif (mathalan 2 swaye3), w kol session t9arrbek. Partagih m3a jme3tek bech t9raw nafs l'cours.</p>
+      <div class="lp-card lp-mission">
+        <span class="lp-pdf">📕</span>
+        <div class="lp-m-body"><b>Physique — Chapitre 2</b><span>1h10 / 2h00 · ba9i 3 ayem</span><div class="lp-bar"><i style="width:58%"></i></div></div>
+        <span class="lp-m-reward">🎁 +60 XP</span>
+      </div>
+    </section>
+
+    <!-- Stats & levels -->
+    <section class="lp-sec">
+      <div class="lp-kicker">📊 Stats w streak</div>
+      <h2>Chouf rou7ek titgaddem.</h2>
+      <p>Jom3tek fi nadhra, streak t7afedh 3lih, w perso yetla3 niveau m3ak: kabbous jdid, alwen jdod, w ghilen todhrobhom b 9raytek 🐉</p>
+      <div class="lp-mini-stats">
+        <div><b>🔥 16</b><span>ayem mtab3in</span></div>
+        <div><b>📚 472h</b><span>wa9t lkol</span></div>
+        <div><b>⭐ Nv 12</b><span>niveau</span></div>
+      </div>
+      <div class="lp-levels" id="levels"></div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="lp-sec">
+      <div class="lp-kicker">❓ As2la</div>
+      <h2>9bal ma tebda.</h2>
+      <div class="lp-faq">
+        <details><summary>9rayaverse bilech?</summary><p>Ey, kol chay bilech: timer, salat, tahadiyet, missions w tartib.</p></details>
+        <details><summary>Ykhdem 3al téléphone?</summary><p>Ey. 7ell l'site fi Chrome walla Safari, w tnajjem tsobbou kima app 3al écran d'accueil (📲).</p></details>
+        <details><summary>Chnowa "sala 9raya"?</summary><p>Blasa 3D fiha persos twensa ya9raw. Temchi, t93ed 3and bureau, w tchouf esm w timer kol wa7ed fou9 rasou. Tnajjem ta7ki m3a elli 9rib menek.</p></details>
+        <details><summary>Kifech yekhdmou l'tahadiyet?</summary><p>Fi jme3tek, ebda tahaddi (nhar, jom3a walla chhar). Kol d9i9a 9raya tet7seb. Elli yerba7 yeb7ou XP w flous w ya5tar l'chart lel elli khser.</p></details>
+        <details><summary>Chnowa "Mode Sarem"?</summary><p>Session ma tnajjemch to9efha walla tokhrej menha. Ken tokhrej akther men 10 swani, tekhsar sa77a. Ama ta5ou XP ×1.5.</p></details>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="lp-final">
+      <h2>bureau mte3ek<br>yestanna fik.</h2>
+      <p>Bilech. A3mel compte fi d9i9a.</p>
+      <button class="lp-cta" data-auth="register">Yallah, nebda ✨</button>
+    </section>
+
+    <footer class="lp-foot">
+      <span>9rayaverse · ma3moul b ❤️ lel twensa</span>
+    </footer>
+  </main>
+
+  <!-- Auth bottom sheet -->
+  <div class="lp-sheet-back" id="sheet" hidden>
+    <div class="lp-sheet" role="dialog" aria-modal="true">
+      <div class="lp-grab"></div>
+      <button class="lp-x" data-close aria-label="Sakker">✕</button>
       <div class="seg" role="tablist">
         <button class="active" data-mode="login">Od5ol</button>
         <button data-mode="register">A3mel compte</button>
@@ -51,43 +181,11 @@
       </form>
 
       <p class="form-error" id="auth-error"></p>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script src="assets/js/common.js?v=4"></script>
-  <script>
-    'use strict';
-    const loginForm = $('#login-form');
-    const registerForm = $('#register-form');
-    const errorBox = $('#auth-error');
-    $('#wilaya').insertAdjacentHTML('beforeend', WILAYAS.map((w) => `<option>${esc(w)}</option>`).join(''));
-
-    // Already logged in? Go straight to the dashboard.
-    API.call('auth', 'me').then(() => { location.href = 'app.html'; }).catch(() => {});
-
-    $$('.seg button').forEach((btn) => btn.addEventListener('click', () => {
-      $$('.seg button').forEach((b) => b.classList.toggle('active', b === btn));
-      loginForm.hidden = btn.dataset.mode !== 'login';
-      registerForm.hidden = btn.dataset.mode !== 'register';
-      errorBox.textContent = '';
-    }));
-
-    async function submit(form, action) {
-      const button = $('button[type=submit]', form);
-      button.disabled = true;
-      errorBox.textContent = '';
-      try {
-        await API.call('auth', action, Object.fromEntries(new FormData(form)));
-        location.href = 'app.html';
-      } catch (e) {
-        errorBox.textContent = e.message;
-      } finally {
-        button.disabled = false;
-      }
-    }
-
-    loginForm.addEventListener('submit', (e) => { e.preventDefault(); submit(loginForm, 'login'); });
-    registerForm.addEventListener('submit', (e) => { e.preventDefault(); submit(registerForm, 'register'); });
-  </script>
+  <script src="assets/js/avatar.js?v=4"></script>
+  <script src="assets/js/landing.js?v=4"></script>
 </body>
 </html>

@@ -546,3 +546,28 @@ table.lb td .row { flex-wrap: nowrap; gap: 6px; }
   .room-page .emote-bar { left: 50%; bottom: 14px; }
   .dpad { left: 18px; right: auto; bottom: 70px; }
 }
+/* Phone: compact room header, everything fits the screen width */
+@media (max-width: 640px) {
+  .room-main { grid-template-columns: minmax(0, 1fr); }
+  .side { min-width: 0; }
+  .room-page .topbar { gap: 8px; padding: 10px 12px; }
+  .room-page .topbar > div:nth-child(2) { flex: 1; min-width: 0; }
+  .room-page #room-name { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .room-page .room-top-stats { display: none; }
+  .room-page #room-switch { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+  .room-main .stage { height: 58vh; padding: 8px; }
+  .stage:has(.world3d) { padding: 8px; }
+  .stage .world3d { left: 8px; top: 8px; border-radius: 20px; }
+  .tags3d { inset: 8px; border-radius: 20px; }
+  .stage-hud { left: 16px; top: 16px; gap: 5px; }
+  .stage-hud .chip { font-size: 11px; padding: 4px 8px; }
+  .stage-ctrl { right: 14px; gap: 6px; }
+  .stage-ctrl button { width: 38px; height: 38px; font-size: 17px; border-radius: 12px; }
+  .stage-actions { right: 14px; bottom: 70px; }
+  .stage-actions .look-btn { font-size: 12px; padding: 6px 10px; }
+  .stage-actions .sit-btn { min-width: 120px; font-size: 14px; padding: 10px 16px; }
+  .dpad { left: 14px; bottom: 66px; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); gap: 4px; }
+  .room-page .emote-bar { bottom: 10px; max-width: calc(100% - 28px); overflow-x: auto; scrollbar-width: none; }
+  .emote-bar button { font-size: 19px; padding: 4px 5px; }
+  .side { height: 68vh; }
+}

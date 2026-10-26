@@ -36,6 +36,7 @@ function setProfile(p) {
   renderStats(state.profile.stats);
   renderProfileCard();
   renderHero(u, state.profile.stats);
+  renderTiles();
   $('#admin-link').hidden = u.role !== 'admin';
 }
 
@@ -59,6 +60,36 @@ function renderHeader(u) {
       <span class="ah-pill hot">🔥 <b>${u.streak}</b> ${u.streak === 1 ? 'nhar' : 'ayem'} streak</span>
       <span class="ah-pill hp">❤️ <b>${u.hp}</b>/${u.max_hp}</span>
     </div>`;
+}
+
+/** Every page opens with the same header as Accueil: a title, a subtitle and 3 live tiles about that page. */
+function pageTiles(name) {
+  const p = state.profile;
+  if (!p) return [];
+  const u = p.user;
+  const s = p.stats;
+  const ch = state.challenges || [];
+  const ms = state.missions || [];
+  const d = study.decks;
+  const groupSum = (k) => state.groups.reduce((a, g) => a + Number(g[k] || 0), 0);
+  switch (name) {
+    case 'focus': return [['⏱️', fmtDuration(s.today), 'lyoum', ''], ['📅', fmtDuration(s.week), 'hal jom3a', 'sky'], ['✅', s.sessions, 'sessions kmlou', 'gold']];
+    case 'rooms': return [['🌍', ROOMS.length, 'salat publiques', ''], ['🔐', state.proomCount ?? '–', 'salat privées', 'sky'], ['👥', state.groups.length, 'salat jme3at', 'gold']];
+    case 'challenges': return [['⚔️', ch.filter((c) => c.status === 'running').length, 'ma7loulin', ''], ['🏆', ch.filter((c) => c.my_outcome === 'winner').length, 'rba7thom', 'gold'], ['👥', state.groups.length, 'jme3at', 'sky']];
+    case 'leaderboard': return [['📅', fmtDuration(s.week), 'hal jom3a', 'sky'], ['⭐', `Nv ${u.level}`, 'niveau', 'gold'], ['🔥', u.streak, u.streak === 1 ? 'nhar mtab3in' : 'ayem mtab3in', '']];
+    case 'cards': return [['🃏', d ? d.decks.length : '–', 'paquets', ''], ['🎯', d ? d.today_cards : '–', 'cartes lyoum', 'gold'], ['🧠', d ? d.decks.reduce((a, x) => a + x.learned, 0) : '–', '7fadhtha', 'sky']];
+    case 'missions': return [['📕', ms.filter((m) => m.status === 'active').length, 'ma7loulin', ''], ['🏅', ms.filter((m) => m.status === 'done').length, 'kmlou', 'gold'], ['🤝', state.sharedCount ?? 0, 'mpartagyin', 'sky']];
+    case 'groups': return [['👥', state.groups.length, 'jme3at', ''], ['🙋', groupSum('members'), 'a3dha', 'sky'], ['⚔️', groupSum('running_challenges'), 'tahadiyet ma7loulin', 'gold']];
+    case 'shop': return [['💰', u.gold, 'flous', 'gold'], ['❤️', `${u.hp}/${u.max_hp}`, 'sa77a', ''], ['⭐', `Nv ${u.level}`, 'niveau', 'sky']];
+    case 'profile': return [['⭐', `Nv ${u.level}`, 'niveau', 'gold'], ['📚', fmtDuration(s.total), 'wa9t lkol', 'sky'], ['👹', u.monster.defeated, 'ghilen ghlabthom', '']];
+    default: return [];
+  }
+}
+
+function renderTiles(name = state.tab) {
+  const el = $(`[data-tiles="${name}"]`);
+  if (!el) return;
+  el.innerHTML = pageTiles(name).map(([e, v, l, c]) => `<div class="hero-tile ${c}"><span class="e">${e}</span><b>${esc(v)}</b><small>${esc(l)}</small></div>`).join('');
 }
 
 /** Three big tiles on top of the dashboard: streak, total study time, level. */
@@ -200,6 +231,8 @@ function missionCard(m) {
 
 function renderMissions(r) {
   state.missions = r.missions;
+  state.sharedCount = r.shared.length;
+  renderTiles('missions');
   $('#mission-list').innerHTML = r.missions.length ? r.missions.map(missionCard).join('')
     : '<div class="empty">Ma 3andek 7atta mission. Habbat awel cours PDF 👉</div>';
   $('#shared-list').innerHTML = r.shared.length ? r.shared.map((m) => `
@@ -375,6 +408,7 @@ function renderRooms() {
 // ---------- Jme3ti (groups) ----------
 function setGroups(groups) {
   state.groups = groups;
+  renderTiles();
   $('#group-list').innerHTML = groups.length ? groups.map((g) => `
     <div class="card group-card" data-group="${g.id}">
       <h3 style="color:var(--text)">${esc(g.name)}</h3>
@@ -648,6 +682,8 @@ function challengeCard(c) {
 
 async function loadChallenges() {
   const { challenges } = await API.call('challenges', 'list');
+  state.challenges = challenges;
+  renderTiles('challenges');
   $('#challenge-list').innerHTML = challenges.length ? challenges.map(challengeCard).join('')
     : '<div class="card empty">Mafammech tahadiyet. Ebda wa7ed m3a s7abek 👉</div>';
 }
@@ -928,6 +964,8 @@ function setupPushBox() {
 const THEME_ART = { pink: ['pink', '🌸'], library: ['library', '📚'], cafe: ['cafe', '☕'], forest: ['forest', '🌲'] };
 
 function renderPrivateRooms(rooms) {
+  state.proomCount = rooms.length;
+  renderTiles('rooms');
   $('#proom-list').innerHTML = rooms.map((r) => {
     const [art, emoji] = THEME_ART[r.theme] || THEME_ART.pink;
     return `
@@ -1043,6 +1081,8 @@ function showTab(name) {
   if (name === 'quests') name = 'home'; // old link: the tasks now live on Accueil
   if (!$(`[data-panel="${name}"]`)) name = 'home';
   // Bottom bar: the 4 main screens; other pages (Tartib, Profili…) keep "Accueil" lit and show a back button.
+  state.tab = name;
+  renderTiles(name);
   const lit = MAIN_TABS.includes(name) ? name : 'home';
   $$('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === lit));
   $('#back-home').hidden = MAIN_TABS.includes(name);
@@ -1055,7 +1095,7 @@ function showTab(name) {
     leaderboard: loadLeaderboard, shop: loadShop, groups: loadGroups, missions: loadMissions,
     challenges: loadChallenges, rooms: loadPrivateRooms, bac: loadBac, cards: loadDecks,
   };
-  loaders[name]?.().catch((e) => toast(e.message, 'bad'));
+  Promise.resolve(loaders[name]?.()).then(() => renderTiles(name)).catch((e) => toast(e.message, 'bad'));
 }
 
 function setupTabs() {

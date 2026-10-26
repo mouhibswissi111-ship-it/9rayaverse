@@ -198,6 +198,7 @@ function showCardEvents(events = []) {
 
 function renderDecks(r) {
   study.decks = r;
+  if (typeof renderTiles === 'function') renderTiles('cards');
   $('#cards-today').textContent = `🃏 ${r.today_cards} lyoum`;
   const groupOptions = (sel) => ['<option value="0">🔒 Privé</option>']
     .concat(state.groups.map((g) => `<option value="${g.id}" ${sel === g.id ? 'selected' : ''}>🤝 ${esc(g.name)}</option>`)).join('');

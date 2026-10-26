@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=12">
+  <link rel="stylesheet" href="assets/css/style.css?v=13">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#fff8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -62,6 +62,9 @@
 
     <!-- TIMER (focus) -->
     <section class="tab-panel" data-panel="focus" hidden>
+      <h1 class="home-title">Wa9t <span>l'9raya.</span></h1>
+      <p class="home-sub">Session wa7da kol nhar a7sen men sifr. Ebda l'timer w ghlib l'ghoul.</p>
+      <div class="hero-tiles" data-tiles="focus"></div>
       <div class="grid focus-grid">
         <div class="card">
           <h2>⏱️ Session 9raya</h2>
@@ -82,6 +85,8 @@
 
     <!-- BAC (COUNTDOWN + PROGRAMME) -->
     <section class="tab-panel" data-panel="bac" hidden>
+      <h1 class="home-title">Imti7ani <span>9rib.</span></h1>
+      <p class="home-sub">Countdown, programme w objectif sa3at: kol chay lel imti7an fi blasa wa7da.</p>
       <div class="card bac-hero" id="bac-hero"></div>
       <div class="grid focus-grid mt">
         <div class="stack">
@@ -116,6 +121,9 @@
 
     <!-- CARTES (FLASHCARDS) -->
     <section class="tab-panel" data-panel="cards" hidden>
+      <h1 class="home-title">Cartes <span>7afdha.</span></h1>
+      <p class="home-sub">So2el w jweb, l'app traja3lek elli ma 3raftouch w kol jweb s7i7 y3tik XP.</p>
+      <div class="hero-tiles" data-tiles="cards"></div>
       <div id="deck-detail" hidden></div>
       <div id="deck-home">
         <div class="grid focus-grid">
@@ -144,6 +152,9 @@
 
     <!-- MISSIONS (PDF COURSES) -->
     <section class="tab-panel" data-panel="missions" hidden>
+      <h1 class="home-title">Missions <span>cours.</span></h1>
+      <p class="home-sub">Habbat l'PDF mte3ek w 7ott objectif. Kol session t9arrbek men l'ghnima.</p>
+      <div class="hero-tiles" data-tiles="missions"></div>
       <div class="grid focus-grid">
         <div class="stack">
           <div class="card">
@@ -179,8 +190,9 @@
 
     <!-- SALAT (ROOMS) -->
     <section class="tab-panel" data-panel="rooms" hidden>
-      <h2>🏰 Salat 9raya virtuelles</h2>
-      <p class="muted">Temchi b WASD / ZQSD walla l'flèches, ta7ki m3a elli 9rib menek, ta3mel pomodoro m3a l'jme3a w tesma3 lo-fi.</p>
+      <h1 class="home-title">Salat <span>9raya.</span></h1>
+      <p class="home-sub">N9raw m3a ba3dhna. Temchi, o93od 3and bureau w a7ki m3a elli 9rib menek.</p>
+      <div class="hero-tiles" data-tiles="rooms"></div>
       <div class="grid cols-3" id="room-list"></div>
 
       <h2 class="mt">🔐 Salat privées</h2>
@@ -215,6 +227,9 @@
 
     <!-- JME3TI (GROUPS) -->
     <section class="tab-panel" data-panel="groups" hidden>
+      <h1 class="home-title">Jme3ti <span>m3a s7abek.</span></h1>
+      <p class="home-sub">A3mel jme3a, ab3ath l'code w ta7addaw b tahadiyet w chorout.</p>
+      <div class="hero-tiles" data-tiles="groups"></div>
       <div id="group-detail" hidden></div>
       <div id="group-home">
         <div class="grid cols-2">
@@ -245,6 +260,9 @@
 
     <!-- TAHADIYET (CHALLENGES) -->
     <section class="tab-panel" data-panel="challenges" hidden>
+      <h1 class="home-title">Tahadiyet <span>s7abek.</span></h1>
+      <p class="home-sub">Elli ya9ra akther yerba7. Elli yakhser, ya3mel l'chart 😈</p>
+      <div class="hero-tiles" data-tiles="challenges"></div>
       <div class="grid focus-grid">
         <div class="stack" id="challenge-list"></div>
         <div class="card">
@@ -257,6 +275,9 @@
 
     <!-- TARTIB (LEADERBOARD) -->
     <section class="tab-panel" data-panel="leaderboard" hidden>
+      <h1 class="home-title">Tartib <span>Tounes.</span></h1>
+      <p class="home-sub">Chkoun ya9ra akther? Qarren rou7ek m3a l'wileyet w l'lycéet.</p>
+      <div class="hero-tiles" data-tiles="leaderboard"></div>
       <div class="card">
         <div class="row spread" style="margin-bottom:14px">
           <h2 style="margin:0">🏆 Tartib</h2>
@@ -282,13 +303,17 @@
 
     <!-- HANOUT (SHOP) -->
     <section class="tab-panel" data-panel="shop" hidden>
-      <h2>🛒 Hanout</h2>
-      <p class="muted">Esrof l'flous elli rba7tha bel 9raya. L'7wayej yban3ou 3al avatar mte3ek fi kol sala.</p>
+      <h1 class="home-title">Hanout <span>tzayyen.</span></h1>
+      <p class="home-sub">Esrof l'flous elli rba7tha bel 9raya. L'7wayej yban3ou 3al perso mte3ek fi kol sala.</p>
+      <div class="hero-tiles" data-tiles="shop"></div>
       <div class="shop-grid" id="shop-grid"></div>
     </section>
 
     <!-- PROFILI -->
     <section class="tab-panel" data-panel="profile" hidden>
+      <h1 class="home-title">Profili <span>enti.</span></h1>
+      <p class="home-sub">Sourtek, perso mte3ek, notifications w l'compte.</p>
+      <div class="hero-tiles" data-tiles="profile"></div>
       <div class="grid cols-2">
         <div class="card">
           <h2>👤 Profili</h2>
@@ -358,7 +383,7 @@
   <script src="assets/js/ambience.js?v=6"></script>
   <script src="assets/js/bac-data.js?v=1"></script>
   <script src="assets/js/focus.js?v=6"></script>
-  <script src="assets/js/study.js?v=2"></script>
-  <script src="assets/js/app.js?v=10"></script>
+  <script src="assets/js/study.js?v=3"></script>
+  <script src="assets/js/app.js?v=11"></script>
 </body>
 </html>

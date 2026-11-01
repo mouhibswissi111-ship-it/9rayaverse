@@ -994,6 +994,11 @@ function setupInput() {
     const b = e.target.closest('[data-side]');
     if (b) switchSide(b.dataset.side);
   });
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-room-tab]');
+    if (b) { switchSide(b.dataset.roomTab); navigator.vibrate?.(8); }
+  });
 }
 
 function sendEmote(e) {

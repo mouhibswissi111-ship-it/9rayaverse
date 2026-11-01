@@ -944,3 +944,22 @@ html[data-theme="dark"] .sb-item { color: var(--text); }
 .heat-cell.h3 { background: #86efac; opacity: .82; }
 .heat-cell.h4 { background: #bbf7d0; }
 @media (max-width: 520px) { .focus-command { padding: 18px; } .focus-command-bottom { align-items: flex-start; flex-direction: column; } }
+
+
+/* ---------- Room Companion HUD ---------- */
+.room-page { background: radial-gradient(900px 500px at 10% -10%, rgba(74,222,128,.12), transparent 62%), #edf7f0; }
+.room-page .topbar { background: rgba(255,255,255,.9); box-shadow: 0 4px 18px rgba(18,48,31,.06); }
+.room-page .side { background: rgba(255,255,255,.9); border-left: 1px solid var(--border); }
+.room-companion { position: absolute; left: 30px; bottom: 30px; z-index: 4; display: flex; align-items: center; gap: 10px; max-width: min(430px, calc(100% - 64px)); padding: 10px 12px; border: 1px solid rgba(255,255,255,.7); border-radius: 18px; background: rgba(18,48,31,.84); color: #fff; box-shadow: 0 12px 28px rgba(18,48,31,.2); backdrop-filter: blur(12px); }
+.room-companion-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: #86efac; box-shadow: 0 0 0 5px rgba(134,239,172,.16); animation: pulse 1.8s infinite; }
+.room-companion b, .room-companion small { display: block; }
+.room-companion b { font: 800 13px var(--head); }
+.room-companion small { color: #bbf7d0; font-size: 10px; white-space: nowrap; }
+.room-companion-actions { display: flex; gap: 4px; margin-left: auto; }
+.room-companion-actions button { border: 1px solid rgba(255,255,255,.16); border-radius: 10px; padding: 7px 8px; color: #fff; background: rgba(255,255,255,.1); font: 700 11px var(--font); cursor: pointer; transition: background .2s, transform .15s; }
+.room-companion-actions button:hover { background: rgba(134,239,172,.24); transform: translateY(-2px); }
+.room-page .tabs { position: sticky; top: 0; z-index: 5; padding: 8px 10px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--border); }
+.room-page .tabs button { min-height: 38px; }
+.room-page .chat-log { background: linear-gradient(180deg, #f8fdf9, #fff); }
+.room-page .chat-form { background: #fff; border-top: 1px solid var(--border); }
+@media (max-width: 700px) { .room-companion { left: 16px; bottom: 64px; right: 16px; max-width: none; } .room-companion-actions { gap: 3px; } .room-companion-actions button { padding: 7px 6px; font-size: 10px; } .room-companion small { max-width: 120px; overflow: hidden; text-overflow: ellipsis; } }

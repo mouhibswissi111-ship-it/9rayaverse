@@ -153,3 +153,24 @@ body.lp { background: #fff; }
 
 .lp-invite { margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 2px dashed var(--accent-2); font-weight: 600; font-size: 14px; }
 .lp-early { grid-column: 1 / -1; color: #2f5340; font-size: 16px; line-height: 1.55; margin: 0; }
+
+
+/* Student-first onboarding */
+.lp-path { position: relative; }
+.lp-path-grid { display: grid; gap: 10px; margin-top: 18px; }
+.lp-path-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid var(--border); border-radius: 20px; padding: 13px 15px; cursor: pointer; color: var(--text); background: #fff; box-shadow: 0 8px 20px rgba(18,48,31,.06); transition: transform .2s var(--ease), box-shadow .2s, border-color .2s; }
+.lp-path-card:hover { transform: translateY(-3px); border-color: var(--accent-2); box-shadow: 0 14px 28px rgba(22,163,74,.14); }
+.lp-path-card:active { transform: translateY(0) scale(.98); }
+.lp-path-card.bac { background: linear-gradient(110deg, #fff7ed, #fff); }
+.lp-path-card.school { background: linear-gradient(110deg, #eff6ff, #fff); }
+.lp-path-card.uni { background: linear-gradient(110deg, #f5f3ff, #fff); }
+.lp-path-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 15px; background: rgba(255,255,255,.85); font-size: 24px; }
+.lp-path-card b, .lp-start-card b { display: block; font: 800 15px var(--head); }
+.lp-path-card small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.lp-path-card strong { color: var(--accent-ink); font-size: 22px; }
+.lp-start-card { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 14px; padding: 15px 16px; border-radius: 20px; color: #fff; background: linear-gradient(135deg, #12301f, #166534); box-shadow: 0 14px 30px rgba(18,48,31,.18); }
+.lp-start-card span { display: block; color: #bbf7d0; font-size: 11px; font-weight: 600; }
+.lp-start-number { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; color: #12301f; background: #86efac; font: 900 11px var(--head); flex: 0 0 auto; }
+.lp-start-line { height: 1px; flex: 1; min-width: 10px; background: rgba(187,247,208,.4); }
+@media (min-width: 700px) { .lp-path-grid { grid-template-columns: repeat(3, 1fr); } .lp-path-card { min-height: 88px; } }
+@media (max-width: 520px) { .lp-start-card { display: grid; grid-template-columns: auto 1fr; } .lp-start-line { display: none; } }

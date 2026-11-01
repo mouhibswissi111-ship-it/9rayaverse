@@ -144,6 +144,13 @@ loadStats();
 setupAuth();
 setupInstallButton($('#install-btn'));
 
+// Remember the learner's entry path so onboarding can be personalized later.
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('[data-track]');
+  if (!card) return;
+  try { localStorage.setItem('rv.entryPath', card.dataset.track); } catch {}
+});
+
 // Came from an invite link: say so and open the sign-up sheet.
 const invite = rememberInvite();
 if (invite && /[?&][gr]=/.test(location.search)) {

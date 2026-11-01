@@ -37,6 +37,7 @@ function setProfile(p) {
   renderStats(state.profile.stats);
   renderProfileCard();
   renderHero(u, state.profile.stats);
+  renderFocusCommand(u, state.profile.stats);
   renderTiles();
   $('#admin-link').hidden = u.role !== 'admin';
 }
@@ -97,6 +98,32 @@ function renderTiles(name = state.tab) {
 function renderHero(u, s) {
   const tiles = [['🔥', u.streak, u.streak === 1 ? 'nhar mtab3in' : 'ayem mtab3in', 'orange'], ['📚', fmtDuration(s.total), 'wa9t lkol', 'sky'], ['🏆', `Nv ${u.level}`, 'niveau', 'gold']];
   $('#hero-tiles').innerHTML = tiles.map(([e, v, l, c]) => `<div class="hero-tile ${c}"><span class="e">${e}</span><b>${esc(v)}</b><small>${l}</small></div>`).join('');
+}
+
+// ---------- Daily focus command center ----------
+function renderFocusCommand(u, s) {
+  const el = $('#focus-command');
+  if (!el) return;
+  const last = store.get('focus', { subject: '', minutes: 25, strict: false });
+  const entry = store.get('entryPath', 'school');
+  const labels = { bac: 'Bac', school: 'Lycée / Collège', uni: 'Fac / Prépa' };
+  const goal = entry === 'bac' ? 'Sujet bac' : entry === 'uni' ? 'Deep focus' : 'Devoir du jour';
+  const max = Math.max(3600, ...s.last7.map((d) => Number(d.seconds || 0)));
+  const heat = s.last7.map((d) => {
+    const level = Number(d.seconds || 0) === 0 ? 0 : Math.min(4, Math.ceil((Number(d.seconds || 0) / max) * 4));
+    return `<span class="heat-cell h${level}" title="${esc(d.date)} · ${fmtDuration(d.seconds)}"></span>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="focus-command-top">
+      <div><span class="eyebrow">🎯 Mission lyoum · ${labels[entry] || '9rayaverse'}</span><h2>25 دقيقة تكفي باش تبدا.</h2><p>اختار مادة، سكّر التشتّت، وخلي وقتك يتحوّل لـ XP.</p></div>
+      <div class="focus-command-orb">${u.streak}<small>🔥 streak</small></div>
+    </div>
+    <div class="focus-command-actions">
+      <button class="btn primary" data-start-focus="25">▶ Ebda 25 min</button>
+      <button class="btn" data-start-focus="50">⚡ 50 min</button>
+      <button class="btn ghost" data-tab="focus">Options mta3 l'timer →</button>
+    </div>
+    <div class="focus-command-bottom"><span><b>${esc(last.subject || goal)}</b><small>${last.minutes || 25} min mta3ek المفضلة</small></span><span class="heat-label">آخر 7 أيام <i>${heat}</i></span></div>`;
 }
 
 // ---------- Bell: everything waiting for you in one sheet ----------
@@ -1165,6 +1192,12 @@ function setupTabs() {
       navigator.vibrate?.(8);
       toggleSide(false);
       location.hash = go.dataset.go;
+      return;
+    }
+    const quick = e.target.closest('[data-start-focus]');
+    if (quick) {
+      store.set('focus', { subject: store.get('focus', {}).subject || 'Session lyoum', minutes: Number(quick.dataset.startFocus), strict: false });
+      location.hash = 'focus';
       return;
     }
     const b = e.target.closest('button[data-tab]');

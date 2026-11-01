@@ -916,3 +916,31 @@ html[data-theme="dark"] .sb-item { color: var(--text); }
   .bottom-nav { display: none; }
   .container { padding-bottom: 40px; }
 }
+
+
+/* ---------- Daily focus command center ---------- */
+.focus-command { position: relative; overflow: hidden; padding: 22px; background: linear-gradient(135deg, #12301f 0%, #166534 58%, #15803d 100%); color: #fff; border: 0; box-shadow: 0 18px 38px rgba(22,101,52,.23); }
+.focus-command::after { content: ''; position: absolute; width: 240px; height: 240px; right: -90px; top: -100px; border-radius: 50%; background: rgba(134,239,172,.2); filter: blur(2px); }
+.focus-command-top, .focus-command-actions, .focus-command-bottom { position: relative; z-index: 1; }
+.focus-command-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.focus-command h2 { color: #fff; font-size: clamp(21px, 4vw, 30px); margin: 6px 0 4px; }
+.focus-command p { color: #bbf7d0; margin: 0; font-size: 13px; }
+.focus-command .eyebrow { color: #86efac; font-size: 12px; font-weight: 800; letter-spacing: .2px; }
+.focus-command-orb { width: 60px; height: 60px; flex: 0 0 auto; display: grid; place-items: center; align-content: center; border-radius: 20px; color: #12301f; background: #bbf7d0; font: 900 22px var(--head); box-shadow: 0 0 0 6px rgba(187,247,208,.12); }
+.focus-command-orb small { display: block; font: 700 9px var(--font); }
+.focus-command-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.focus-command .btn { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.1); color: #fff; }
+.focus-command .btn.primary { background: #bbf7d0; color: #12301f; box-shadow: none; }
+.focus-command .btn.ghost { border-color: transparent; }
+.focus-command-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(187,247,208,.25); }
+.focus-command-bottom b, .focus-command-bottom small { display: block; }
+.focus-command-bottom b { font: 800 13px var(--head); }
+.focus-command-bottom small { color: #bbf7d0; font-size: 11px; }
+.heat-label { display: flex; align-items: center; gap: 8px; color: #bbf7d0; font-size: 11px; white-space: nowrap; }
+.heat-label i { display: flex; gap: 3px; }
+.heat-cell { width: 9px; height: 9px; border-radius: 3px; background: rgba(255,255,255,.16); }
+.heat-cell.h1 { background: #86efac; opacity: .45; }
+.heat-cell.h2 { background: #86efac; opacity: .65; }
+.heat-cell.h3 { background: #86efac; opacity: .82; }
+.heat-cell.h4 { background: #bbf7d0; }
+@media (max-width: 520px) { .focus-command { padding: 18px; } .focus-command-bottom { align-items: flex-start; flex-direction: column; } }

@@ -979,3 +979,7 @@ html[data-theme="dark"] .sb-item { color: var(--text); }
 .room-card .body p { line-height: 1.55; }
 .room-card .body .btn { display: flex; align-items: center; justify-content: space-between; }
 @keyframes roomGradient { from { background-position: 0% 35%; } to { background-position: 100% 65%; } }
+
+.room-card .art.has-visual { background-image: linear-gradient(180deg, rgba(16,35,28,.08), rgba(16,35,28,.48)), var(--room-visual); background-size: cover; background-position: center 38%; }
+.room-card .art.has-visual::after { height: 58%; background: linear-gradient(180deg, transparent, rgba(16,35,28,.78)); }
+.room-card .art.has-visual .art-emoji { opacity: 0; }

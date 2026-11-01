@@ -5,7 +5,7 @@
 const state = { profile: null, groups: [], lbPeriod: 'week', lbKind: 'students', openGroup: null, groupTimer: null, liveTick: null, timer: null, challenges: [] };
 
 const ROOMS = [
-  { id: 'library', name: 'Maktbet Lil', art: 'library', emoji: '📚', mode: 'Deep focus', vibe: 'Skoot · lampes dafya', desc: 'Bureaux skoot, lampes dafya w rfouf ktob. Lel 9raya l\'s7i7a.' },
+  { id: 'library', name: 'Maktbet Lil', art: 'library', emoji: '📚', mode: 'Deep focus', vibe: 'Skoot · lampes dafya', visual: 'assets/rooms/maktbet-lil-poster.png', desc: 'Bureaux skoot, lampes dafya w rfouf ktob. Lel 9raya l\'s7i7a.' },
   { id: 'cafe', name: '9ahwet Sidi Bou', art: 'cafe', emoji: '☕', mode: 'Social study', vibe: 'Lo-fi · chat 9rib', desc: 'Jaw 9ahwa bel lo-fi. A7ki bechwaya, echrob w 9ra m3a s7abek.' },
   { id: 'forest', name: 'Dar fi 3in Draham', art: 'forest', emoji: '🌲', mode: 'Rain focus', vibe: 'Mtar · kanoun · nature', desc: 'Dar wost l\'ghaba. Ch3el l\'mtar walla l\'kanoun w ab9a mrekez.' },
   { id: 'pink', name: 'Bit Wardi', art: 'pink', emoji: '🌸', mode: 'Easy study', vibe: 'Pastel · nhar · cozy', desc: 'Sala cute bel nhar, alwen pastel w jaw dafi. Lel 9raya m3a s7abek.' },
@@ -424,7 +424,7 @@ function renderRooms() {
     .concat(state.groups.map((g) => ({ id: `g${g.id}`, name: g.name, art: 'group', emoji: '👥', desc: `Sala privée lel jme3a mte3ek (${g.members} a3dha).`, href: `room.html?room=g${g.id}` })));
   $('#room-list').innerHTML = cards.map((r) => `
     <div class="card room-card">
-      <div class="art ${r.art}"><span class="art-glow"></span><span class="art-emoji">${r.emoji}</span><span class="art-live"><i></i> live</span></div>
+      <div class="art ${r.art} ${r.visual ? 'has-visual' : ''}" ${r.visual ? `style="--room-visual:url('${r.visual}')"` : ''}><span class="art-glow"></span><span class="art-emoji">${r.emoji}</span><span class="art-live"><i></i> live</span></div>
       <div class="body">
         <div class="room-title-row"><h3 style="color:var(--text);margin:0">${esc(r.name)}</h3><span class="room-arrow">↗</span></div>
         <div class="room-meta"><span>${esc(r.mode || 'Jme3a')}</span><span>•</span><span>${esc(r.vibe || `${r.members} a3dha`)}</span></div>

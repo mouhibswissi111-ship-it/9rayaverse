@@ -963,3 +963,19 @@ html[data-theme="dark"] .sb-item { color: var(--text); }
 .room-page .chat-log { background: linear-gradient(180deg, #f8fdf9, #fff); }
 .room-page .chat-form { background: #fff; border-top: 1px solid var(--border); }
 @media (max-width: 700px) { .room-companion { left: 16px; bottom: 64px; right: 16px; max-width: none; } .room-companion-actions { gap: 3px; } .room-companion-actions button { padding: 7px 6px; font-size: 10px; } .room-companion small { max-width: 120px; overflow: hidden; text-overflow: ellipsis; } }
+
+
+/* ---------- Room world polish ---------- */
+.room-card .art { overflow: hidden; isolation: isolate; background-size: 180% 180%; animation: roomGradient 10s ease-in-out infinite alternate; }
+.room-card .art::before { content: ''; position: absolute; inset: 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 22px; opacity: .8; }
+.room-card .art-glow { position: absolute; width: 120px; height: 120px; right: 18%; top: 14%; border-radius: 50%; background: rgba(255,255,255,.4); filter: blur(16px); }
+.room-card .art-emoji { position: relative; z-index: 1; filter: drop-shadow(0 10px 9px rgba(30,20,50,.18)); transform: translateY(-3px); }
+.room-card .art-live { position: absolute; z-index: 2; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 5px 8px; color: #fff; background: rgba(18,48,31,.28); backdrop-filter: blur(6px); font: 800 10px var(--font); text-transform: uppercase; letter-spacing: .5px; }
+.room-card .art-live i { width: 6px; height: 6px; border-radius: 50%; background: #bbf7d0; box-shadow: 0 0 0 4px rgba(187,247,208,.16); }
+.room-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.room-arrow { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 10px; color: var(--accent-ink); background: var(--accent-soft); font-size: 17px; transition: transform .2s; }
+.room-card:hover .room-arrow { transform: translate(2px,-2px); }
+.room-meta { display: flex; align-items: center; gap: 6px; color: var(--accent-ink); font-size: 11px; font-weight: 800; }
+.room-card .body p { line-height: 1.55; }
+.room-card .body .btn { display: flex; align-items: center; justify-content: space-between; }
+@keyframes roomGradient { from { background-position: 0% 35%; } to { background-position: 100% 65%; } }

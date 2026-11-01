@@ -24,6 +24,8 @@ class Room3D {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.12;
     this.canvas = this.renderer.domElement;
     this.canvas.className = 'world3d';
     stage.prepend(this.canvas);
@@ -33,6 +35,7 @@ class Room3D {
     stage.appendChild(this.overlay);
 
     this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.Fog('#e9dfd3', 22, 56);
     this.camera = new THREE.PerspectiveCamera(40, 1.5, 0.1, 200);
     this.raycaster = new THREE.Raycaster();
     this.floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -130,6 +133,9 @@ class Room3D {
     for (const c of [...this.staticGroup.children]) this.staticGroup.remove(c);
     const night = theme.dark > 0.3;
     this.scene.background = new THREE.Color(night ? '#2a2036' : '#fde8d6');
+    this.scene.fog.color.set(night ? '#211b31' : '#f6e3d2');
+    this.scene.fog.near = night ? 20 : 26;
+    this.scene.fog.far = 58;
     this.hemi.intensity = night ? 0.75 : 0.9;
     this.sun.intensity = night ? 0.55 : 0.8;
     this.sun.color.set(night ? '#ffd9a8' : '#fff4e6');
@@ -229,6 +235,16 @@ class Room3D {
             break;
         }
       }
+    }
+
+    // Warm practical lights make the room feel inhabited instead of flat.
+    for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.cols; x++) {
+      if (this.tileAt(x, y) !== 'L') continue;
+      const point = new THREE.PointLight(theme.light, night ? 1.15 : 0.38, night ? 8 : 5, 2);
+      point.position.set(x + 0.5, 1.25, y + 0.5);
+      point.castShadow = night;
+      if (night) point.shadow.mapSize.set(512, 512);
+      this.staticGroup.add(point);
     }
 
     for (const d of decor || []) {

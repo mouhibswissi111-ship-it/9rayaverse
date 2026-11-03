@@ -32,6 +32,9 @@ class Room3D {
     this.lightTarget = null;
     this.chars = new Map();   // player id -> { group, key, yaw, tag, ring }
     this.hover = null;
+    this._modelTemplates = {}; // key -> normalized GLB template (Phase 2)
+    this._modelsLoading = false;
+    this._slots = [];          // furniture slots built by build()
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -49,6 +52,7 @@ class Room3D {
     stage.appendChild(this.overlay);
 
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color('#fde8d6'); // pushLighting() fait .copy() dessus : ne doit pas rester null
     this.scene.fog = new THREE.Fog('#e9dfd3', 22, 56);
     this.camera = new THREE.PerspectiveCamera(40, 1.5, 0.1, 200);
     this.raycaster = new THREE.Raycaster();
@@ -86,6 +90,7 @@ class Room3D {
     this.scene.add(this.dust);
 
     this.build(opts.theme, opts.themeName, opts.decor);
+    this.loadModels(); // Phase 2: vrais modèles GLB (async, fallback = primitifs Phase 1)
     this.resize();
     new ResizeObserver(() => this.resize()).observe(stage);
     this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.setZoom(this.zoom * (e.deltaY > 0 ? 1.12 : 0.89)); }, { passive: false });
@@ -338,6 +343,7 @@ class Room3D {
     this.theme = theme;
     this.themeName = themeName;
     for (const c of [...this.staticGroup.children]) this.staticGroup.remove(c);
+    this._slots = [];
     const night = theme.dark > 0.3; // themes lil (maktba/9ahwa/ghaba): lampes + glow a9wa
     this.applyLighting(!this.lightCur);
 
@@ -361,69 +367,80 @@ class Room3D {
             this.box(1.02, 0.06, 1.02, new THREE.Color(theme.wallFace).lerp(new THREE.Color('#ffffff'), 0.35).getStyle(), cx, h + 0.03, cz);
             break;
           }
-          case 'B':
+          case 'B': {
             if (themeName === 'forest') {
               this.cyl(0.08, 0.1, 0.7, woodDark, cx, 0.35, cz);
               this.ball(0.45, r > 0.5 ? '#2f7a45' : '#3a8f52', cx, 1.0, cz);
             } else if (themeName === 'cafe') {
-              this.box(1, 0.95, 0.8, wood, cx, 0.475, cz).material = this.woodMat();
-              this.box(1.02, 0.06, 0.86, woodDark, cx, 0.98, cz);
-              if (x % 2) { this.cyl(0.07, 0.06, 0.12, '#fff7ef', cx, 1.07, cz); this.cyl(0.055, 0.055, 0.01, '#6b3e26', cx, 1.135, cz); }
+              const slot = this.slotFor(x, y, 'counter');
+              this.box(1, 0.95, 0.8, wood, cx, 0.475, cz, slot).material = this.woodMat();
+              this.box(1.02, 0.06, 0.86, woodDark, cx, 0.98, cz, slot);
+              if (x % 2) { this.cyl(0.07, 0.06, 0.12, '#fff7ef', cx, 1.07, cz, slot); this.cyl(0.055, 0.055, 0.01, '#6b3e26', cx, 1.135, cz, slot); }
             } else {
-              this.box(1, 1.5, 0.45, woodDark, cx, 0.75, cz - 0.2).material = this.woodMat();
+              const slot = this.slotFor(x, y, 'shelf');
+              this.box(1, 1.5, 0.45, woodDark, cx, 0.75, cz - 0.2, slot).material = this.woodMat();
               const colors = ['#e57373', '#64b5f6', '#81c784', '#ffd54f', '#ba68c8', '#4dd0e1'];
               for (let shelf = 0; shelf < 3; shelf++) {
                 for (let i = 0; i < 5; i++) {
                   const bh = 0.25 + this.hash(x * 7 + i, y + shelf) * 0.12;
-                  this.box(0.15, bh, 0.3, colors[Math.floor(this.hash(x + i, y * 3 + shelf) * colors.length)], x + 0.15 + i * 0.17, 0.12 + shelf * 0.48 + bh / 2, cz - 0.1);
+                  this.box(0.15, bh, 0.3, colors[Math.floor(this.hash(x + i, y * 3 + shelf) * colors.length)], x + 0.15 + i * 0.17, 0.12 + shelf * 0.48 + bh / 2, cz - 0.1, slot);
                 }
               }
             }
             break;
+          }
           case 'D':
           case 'T': {
+            const slot = this.slotFor(x, y, c === 'D' ? 'desk' : 'table', { r });
             const top = c === 'D' ? 0.62 : 0.55;
-            this.box(1.001, 0.07, c === 'D' ? 0.8 : 1.001, wood, cx, top, cz - (c === 'D' ? 0.05 : 0)).material = this.woodMat();
-            const legs = (dx, dz) => this.box(0.07, top, 0.07, woodDark, cx + dx, top / 2, cz + dz);
+            this.box(1.001, 0.07, c === 'D' ? 0.8 : 1.001, wood, cx, top, cz - (c === 'D' ? 0.05 : 0), slot).material = this.woodMat();
+            const legs = (dx, dz) => this.box(0.07, top, 0.07, woodDark, cx + dx, top / 2, cz + dz, slot);
             if (this.tileAt(x - 1, y) !== c) { legs(-0.42, -0.35); legs(-0.42, 0.3); }
             if (this.tileAt(x + 1, y) !== c) { legs(0.42, -0.35); legs(0.42, 0.3); }
             if (r > 0.55) { // laptop
-              this.box(0.42, 0.025, 0.3, '#cfd8e3', cx, top + 0.05, cz + 0.05);
-              const screen = this.box(0.42, 0.28, 0.02, '#455a64', cx, top + 0.19, cz - 0.11);
+              this.box(0.42, 0.025, 0.3, '#cfd8e3', cx, top + 0.05, cz + 0.05, slot);
+              const screen = this.box(0.42, 0.28, 0.02, '#455a64', cx, top + 0.19, cz - 0.11, slot);
               screen.rotation.x = -0.25;
             } else if (r > 0.3) { // books + mug
-              this.box(0.3, 0.06, 0.22, '#f8bbd0', cx - 0.15, top + 0.07, cz);
-              this.box(0.28, 0.05, 0.2, '#90caf9', cx - 0.15, top + 0.125, cz);
-              this.cyl(0.06, 0.05, 0.12, '#fffaf0', cx + 0.22, top + 0.1, cz);
+              this.box(0.3, 0.06, 0.22, '#f8bbd0', cx - 0.15, top + 0.07, cz, slot);
+              this.box(0.28, 0.05, 0.2, '#90caf9', cx - 0.15, top + 0.125, cz, slot);
+              this.cyl(0.06, 0.05, 0.12, '#fffaf0', cx + 0.22, top + 0.1, cz, slot);
             }
             break;
           }
-          case 'c':
-            this.box(0.46, 0.06, 0.46, woodDark, cx, 0.36, cz + 0.05);
-            this.box(0.46, 0.42, 0.06, woodDark, cx, 0.6, cz + 0.27);
-            for (const [dx, dz] of [[-0.19, -0.15], [0.19, -0.15], [-0.19, 0.25], [0.19, 0.25]]) this.box(0.05, 0.36, 0.05, woodDark, cx + dx, 0.18, cz + dz);
-            break;
-          case 'S': {
-            this.box(1.001, 0.38, 0.9, theme.sofa, cx, 0.19, cz);
-            this.box(1.001, 0.1, 0.8, '#ffffff', cx, 0.42, cz).material = this.mat(new THREE.Color(theme.sofa).lerp(new THREE.Color('#fff'), 0.35).getStyle());
-            // backrest on the side facing away from the rug (or against the wall)
-            let back = [0, -0.38, 1, 0.18];                                   // north
-            if (this.tileAt(x + 1, y) === 'R') back = [-0.38, 0, 0.18, 1];   // rug east → back west
-            else if (this.tileAt(x - 1, y) === 'R') back = [0.38, 0, 0.18, 1]; // rug west → back east
-            this.box(back[2], 0.75, back[3], theme.sofa, cx + back[0], 0.37, cz + back[1]);
+          case 'c': {
+            const slot = this.slotFor(x, y, 'chair');
+            this.box(0.46, 0.06, 0.46, woodDark, cx, 0.36, cz + 0.05, slot);
+            this.box(0.46, 0.42, 0.06, woodDark, cx, 0.6, cz + 0.27, slot);
+            for (const [dx, dz] of [[-0.19, -0.15], [0.19, -0.15], [-0.19, 0.25], [0.19, 0.25]]) this.box(0.05, 0.36, 0.05, woodDark, cx + dx, 0.18, cz + dz, slot);
             break;
           }
-          case 'P':
-            this.cyl(0.2, 0.15, 0.3, '#c0754a', cx, 0.15, cz);
-            this.ball(0.3, theme.plant, cx, 0.55, cz, undefined, true);
-            this.ball(0.2, theme.plant, cx + 0.15, 0.72, cz - 0.05, undefined, true);
+          case 'S': {
+            // backrest on the side facing away from the rug (or against the wall)
+            let back = [0, -0.38, 1, 0.18];                                   // north
+            let rotY = 0; // modèle sofa: face = +Z local → vers le tapis
+            if (this.tileAt(x + 1, y) === 'R') { back = [-0.38, 0, 0.18, 1]; rotY = Math.PI / 2; }   // rug east → back west, face east
+            else if (this.tileAt(x - 1, y) === 'R') { back = [0.38, 0, 0.18, 1]; rotY = -Math.PI / 2; } // rug west → back east, face west
+            const slot = this.slotFor(x, y, 'sofa', { rotY });
+            this.box(1.001, 0.38, 0.9, theme.sofa, cx, 0.19, cz, slot);
+            this.box(1.001, 0.1, 0.8, '#ffffff', cx, 0.42, cz, slot).material = this.mat(new THREE.Color(theme.sofa).lerp(new THREE.Color('#fff'), 0.35).getStyle());
+            this.box(back[2], 0.75, back[3], theme.sofa, cx + back[0], 0.37, cz + back[1], slot);
             break;
+          }
+          case 'P': {
+            const slot = this.slotFor(x, y, 'plant', { rotY: r * 1.2 });
+            this.cyl(0.2, 0.15, 0.3, '#c0754a', cx, 0.15, cz, slot);
+            this.ball(0.3, theme.plant, cx, 0.55, cz, slot, true);
+            this.ball(0.2, theme.plant, cx + 0.15, 0.72, cz - 0.05, slot, true);
+            break;
+          }
           case 'L': {
-            this.cyl(0.03, 0.03, 1.3, '#6b5b73', cx, 0.65, cz);
-            this.cyl(0.14, 0.18, 0.05, '#6b5b73', cx, 0.03, cz);
+            const slot = this.slotFor(x, y, 'lamp');
+            this.cyl(0.03, 0.03, 1.3, '#6b5b73', cx, 0.65, cz, slot);
+            this.cyl(0.14, 0.18, 0.05, '#6b5b73', cx, 0.03, cz, slot);
             const shade = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.24, 18, 1, true), new THREE.MeshBasicMaterial({ color: theme.light, side: THREE.DoubleSide }));
             shade.position.set(cx, 1.38, cz);
-            this.staticGroup.add(shade);
+            slot.add(shade);
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTexture(), color: theme.light, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: night ? 0.85 : 0.22 }));
             glow.scale.set(night ? 2.2 : 1.5, night ? 2.2 : 1.5, 1);
             glow.position.set(cx, 1.3, cz);
@@ -459,6 +476,157 @@ class Room3D {
         this.staticGroup.add(glow);
       }
     }
+
+    this.applyModels(); // Phase 2: remplacer les primitifs par les modèles GLB déjà chargés (sinon au chargement)
+  }
+
+  // ---------- Phase 2: vrais modèles 3D (GLB, Kenney CC0) ----------
+  // Les meubles procéduraux (Phase 1) restent le fallback: si le loader est
+  // absent (vieux cache) ou si un modèle ne charge pas, la salle garde son
+  // look Phase 1 — rien ne casse. Les modèles sont remplacés dès qu'ils sont
+  // chargés (async), et à chaque rebuild (changement de thème).
+  static MODEL_DEFS = {
+    desk:    { url: 'assets/models/desk.glb.b64', w: 1.0, h: 0.52 },
+    chair:   { url: 'assets/models/chairDesk.glb.b64', w: 0.7, h: 0.59 },
+    shelf:   { url: 'assets/models/bookcaseOpen.glb.b64', w: 0.62, h: 1.32 },
+    counter: { url: 'assets/models/kitchenCabinet.glb.b64', w: 0.9, h: 0.9 },
+    table:   { url: 'assets/models/table.glb.b64', w: 1.18, h: 0.46 },
+    sofa:    { url: 'assets/models/loungeSofa.glb.b64', w: 1.27, h: 0.6 },
+    plant:   { url: 'assets/models/pottedPlant.glb.b64', w: 0.4, h: 0.8 },
+    lamp:    { url: 'assets/models/lampRoundFloor.glb.b64', w: 0.25, h: 1.29 },
+    books:   { url: 'assets/models/books.glb.b64', w: 0.23, h: 0.15 },
+    laptop:  { url: 'assets/models/laptop.glb.b64', w: 0.33, h: 0.2 },
+  };
+
+  /** Crée un slot de meuble (groupe vide dans staticGroup) pour une tuile. */
+  slotFor(x, y, type, extra = {}) {
+    const group = new THREE.Group();
+    this.staticGroup.add(group);
+    const slot = { type, group, x, y, done: false, ...extra };
+    this._slots.push(slot);
+    return group;
+  }
+
+  loadModels() {
+    if (this._modelsLoading || typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') return;
+    this._modelsLoading = true;
+    const loader = new THREE.GLTFLoader();
+    const defs = Room3D.MODEL_DEFS;
+    const keys = Object.keys(defs);
+    let pending = keys.length;
+    const done = () => { if (--pending <= 0) this.applyModels(); };
+    for (const key of keys) {
+      // Modèles stockés en base64 (voir assets/models/README.md) : le push
+      // GitHub de ce repo est texte-only, donc les GLB sont encodés.
+      // On décode vers les bytes GLB originaux puis on parse.
+      fetch(defs[key].url).then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      }).then((b64) => {
+        const bin = atob(b64.replace(/\s/g, ''));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        loader.parse(bytes.buffer, '', (gltf) => {
+          try { this._modelTemplates[key] = this.normalizeModel(gltf.scene, defs[key]); } catch (e) { /* fallback: primitifs */ }
+          done();
+        }, () => done());
+      }).catch(() => done());
+    }
+  }
+
+  /** Centre le modèle sur sa tuile, bas à y=0, scale vers la taille cible.
+   *  Les modèles Kenney sont KHR_materials_unlit (MeshBasicMaterial): on les
+   *  convertit en MeshStandardMaterial pour que le cycle jour/nuit les éclaire
+   *  comme le reste de la salle. */
+  normalizeModel(scene, def) {
+    scene.traverse((o) => {
+      if (!o.isMesh) return;
+      const m = o.material;
+      if (m && m.isMeshBasicMaterial) {
+        o.material = new THREE.MeshStandardMaterial({ color: m.color ? m.color.clone() : 0xffffff, roughness: 0.85, metalness: 0 });
+      }
+      o.castShadow = true;
+      o.receiveShadow = true;
+    });
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const scale = Math.min(def.w / size.x, def.h / size.y, 1 / size.z);
+    const inner = new THREE.Group();
+    inner.add(scene);
+    scene.position.set(-center.x, -box.min.y, -center.z);
+    inner.scale.setScalar(scale);
+    return { group: inner, scale, topY: size.y * scale };
+  }
+
+  /** Remplace les primitifs des slots par les modèles déjà chargés. */
+  applyModels() {
+    if (!this._slots || !this._modelTemplates) return;
+    for (const slot of this._slots) {
+      if (slot.done) continue;
+      if (this.upgradeSlot(slot)) slot.done = true;
+    }
+  }
+
+  /** Remplace les primitifs d'un slot par le vrai modèle (clone du template).
+   *  Retourne false si le modèle n'est pas encore chargé (on réessaiera). */
+  upgradeSlot(slot) {
+    const tpl = this._modelTemplates[slot.type];
+    if (!tpl) return false;
+    const cx = slot.x + 0.5;
+    const cz = slot.y + 0.5;
+    // Vider le slot (géométries procédurales) — les matériaux sont partagés/cachés, on ne les dispose pas.
+    for (const ch of [...slot.group.children]) {
+      ch.traverse?.((o) => { if (o.geometry) o.geometry.dispose?.(); });
+      slot.group.remove(ch);
+    }
+    const place = (key, x, y, z, rotY = 0) => {
+      const t = this._modelTemplates[key];
+      if (!t) return null;
+      const inst = t.group.clone(true);
+      inst.position.set(x, y, z);
+      inst.rotation.y = rotY;
+      slot.group.add(inst);
+      return inst;
+    };
+    switch (slot.type) {
+      case 'desk': {
+        place('desk', cx, 0, cz - 0.05);
+        const topY = tpl.topY;
+        if (slot.r > 0.55) place('laptop', cx - 0.05, topY, cz - 0.13);
+        else if (slot.r > 0.3) {
+          place('books', cx - 0.15, topY, cz + 0.02, 0.4);
+          this.cyl(0.06, 0.05, 0.12, '#fffaf0', cx + 0.22, topY + 0.06, cz, slot.group);
+        }
+        break;
+      }
+      case 'table':
+        place('table', cx, 0, cz);
+        break;
+      case 'chair':
+        place('chair', cx, 0, cz + 0.05, Math.PI);
+        break;
+      case 'shelf':
+        place('shelf', cx, 0, cz - 0.2);
+        break;
+      case 'counter':
+        place('counter', cx, 0, cz);
+        break;
+      case 'sofa':
+        place('sofa', cx, 0, cz, slot.rotY || 0);
+        break;
+      case 'plant':
+        place('plant', cx, 0, cz, slot.rotY || 0);
+        break;
+      case 'lamp':
+        place('lamp', cx, 0, cz);
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 
   glowTexture() {

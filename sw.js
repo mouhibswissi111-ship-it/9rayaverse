@@ -1,10 +1,11 @@
 // Service worker: makes 9rayaverse installable and keeps the app shell available offline.
 // Network-first for everything (always fresh when online); the API and uploads are never cached.
-const CACHE = 'rayaverse-v24';
+const CACHE = 'rayaverse-v25';
 const SHELL = [
   './', 'index.html', 'app.html', 'room.html', 'offline.html',
   'assets/css/style.css',
-  'assets/js/common.js', 'assets/js/avatar.js', 'assets/js/focus.js', 'assets/js/study.js', 'assets/js/bac-data.js', 'assets/js/app.js', 'assets/js/room.js', 'assets/js/room3d.js', 'assets/js/ambience.js',
+  'assets/js/common.js', 'assets/js/avatar.js', 'assets/js/focus.js', 'assets/js/study.js', 'assets/js/bac-data.js', 'assets/js/app.js', 'assets/js/room.js', 'assets/js/room3d.js', 'assets/js/GLTFLoader.js', 'assets/js/ambience.js',
+  'assets/models/desk.glb.b64', 'assets/models/chairDesk.glb.b64', 'assets/models/bookcaseOpen.glb.b64', 'assets/models/kitchenCabinet.glb.b64', 'assets/models/table.glb.b64', 'assets/models/loungeSofa.glb.b64', 'assets/models/pottedPlant.glb.b64', 'assets/models/lampRoundFloor.glb.b64', 'assets/models/books.glb.b64', 'assets/models/laptop.glb.b64',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png',
 ];
 

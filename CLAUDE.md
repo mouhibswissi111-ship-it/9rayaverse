@@ -5,7 +5,7 @@ Owner: Mouhib (GitHub `mouhibswissi111-ship-it`, repo `9rayaverse`). Non-develop
 
 ## Owner preferences (keep these)
 - **All UI text in Tunisian Derja, Latin script (arabizi)**: "Yallah nebdew", "9raya", "Tahadiyet", "O93od"… Talk to the owner in Derja too.
-- **Colour theme: "Ghrouba" (peach/orange), NOT pink.** Tokens in `assets/css/style.css` `:root` (`--accent #ea580c`, `--bg #fff8f3`…).
+- **Colour theme: green.** Tokens in `assets/css/style.css` `:root` (`--accent #16a34a`, `--bg #f3fbf5`).
 - Style reference: **Lilo study app** (soft pastel, rounded cards, floating bottom nav, 3D rooms with chibi avatars, name + timer above heads).
 - Owner has **no international bank card** → only free hosting or Tunisian hosts paid in TND (Oxahost "Standard Nano" ≈ 22 DT HT/month was the suggested VPS).
 - Windows 10 PC: avoid emoji newer than Unicode 12 (e.g. 🪙 🫡 🪴 don't render). Windows PowerShell 5.1 scripts must be **ASCII only**.
@@ -44,7 +44,7 @@ Accounts (first account = admin), strict focus mode + heartbeat, pause/resume, X
 - Room UI order: side tabs now Chat → Timer l'sala → 9rayti → Nes → Jaw → Dicor (panels reordered to match).
 - Cache bumps: `room3d.js?v=8`, `room.js?v=17`, `sw.js` CACHE `rayaverse-v24`.
 - Smoke test: `/tmp/room3d-test.js` (Node, stubbed THREE/DOM — NOT in the repo) constructs Room3D, runs frames, cycles all day phases, drags the camera, resets, clamps zoom, pickTile, rebuild, destroy. It caught one real bug during development (a dropped `camTarget` init) which was fixed.
-- NOTE — theme drift: this file says Ghrouba `--accent #ea580c`, but `assets/css/style.css` `:root` is actually green `#16a34a` (orange #ea580c is only for the challenges page + 3D highlights). Phase 1 did NOT retheme globally — that needs the owner's explicit OK.
+- NOTE — theme: the app is green (`--accent #16a34a`); orange #ea580c is only for the challenges page + 3D highlights. Do NOT retheme globally without the owner's explicit OK.
 
 ## 3D rooms — Phase 2 (Nov 2026): real furniture models (Lilo-style)
 - **Models (free, CC0)**: Kenney Furniture Kit 2.0 (https://kenney.nl/assets/furniture-kit) — 10 GLB vendored in `assets/models/` (~127 KB total: desk, chairDesk, bookcaseOpen, kitchenCabinet, table, loungeSofa, pottedPlant, lampRoundFloor, books, laptop) + `assets/models/LICENSE-Kenney.txt`. **Stored base64-encoded (`*.glb.b64`, ~169 KB)** because the GitHub push path for this repo is text-only (binary files are refused); `loadModels()` fetches the text, `atob()`-decodes it to the original GLB bytes and calls `GLTFLoader.parse()` — verified byte-identical (see `assets/models/README.md` for the decode command). If real `.glb` files are ever pushed via classic git, just point `Room3D.MODEL_DEFS` back at `.glb` URLs and load as arraybuffer.

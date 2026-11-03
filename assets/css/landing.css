@@ -127,9 +127,9 @@ body.lp { background: #fff; }
 .lp-foot { text-align: center; color: var(--faint); font-size: 13px; padding: 24px 0 calc(30px + env(safe-area-inset-bottom)); }
 
 /* Auth bottom sheet */
-.lp-sheet-back { position: fixed; inset: 0; z-index: 80; background: rgba(43,26,16,.38); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s; }
+.lp-sheet-back { position: fixed; inset: 0; z-index: 80; background: rgba(18,48,31,.38); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s; }
 .lp-sheet { position: relative; width: 100%; max-width: 480px; background: #fff; border-radius: 28px 28px 0 0; padding: 14px 20px calc(22px + env(safe-area-inset-bottom)); box-shadow: 0 -14px 40px rgba(18,48,31,.2); animation: sheetUp .35s var(--ease); max-height: 92vh; overflow-y: auto; }
-.lp-grab { width: 44px; height: 5px; border-radius: 999px; background: #f2d2bb; margin: 0 auto 14px; }
+.lp-grab { width: 44px; height: 5px; border-radius: 999px; background: var(--border-strong); margin: 0 auto 14px; }
 .lp-x { position: absolute; right: 14px; top: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: #ecf9ef; color: var(--accent-ink); font-size: 16px; cursor: pointer; }
 .lp-sheet .seg { width: 100%; margin-bottom: 16px; }
 .lp-sheet .seg button { flex: 1; }

@@ -36,6 +36,16 @@ Accounts (first account = admin), strict focus mode + heartbeat, pause/resume, X
 - API tests used throwaway accounts named `zz_test_*` — always delete them afterwards (`DELETE FROM users WHERE username LIKE 'zz\_test\_%'`) so the owner's data stays clean. The owner's real admin account is `mouhibswissi` — never touch it.
 - The Claude desktop browser pane doesn't run requestAnimationFrame / service workers: step frames manually (`update(); render()`) to check the 3D view.
 
+## 3D rooms — Phase 1 (Nov 2026, in /tmp/9rayaverse, NOT pushed)
+- Day/night cycle: `Room3D.setDayPhase()` — Auto (from local hour) / Sbe7 / Nhar / 3chiya / Lil. Sun + hemi + background + fog + floor sun-patch lerp smoothly every frame (`applyLighting` / `pushLighting`). Button in room.html stage-ctrl (`#dayphase-btn`), persisted in store `dayphase`.
+- Orbit camera: drag on the WebGL canvas orbits yaw (±0.85 rad, persisted `camYaw`), pinch zooms on touch, wheel zoom as before, double-click or 🎥 Cam button resets. Drag > 8px suppresses the following click so decor placement can't fire by accident; orbit is disabled while Mode Dicor is on (`view3d.orbitEnabled`, set from room.js `setEditMode`).
+- Richer materials (procedural, no external assets): CanvasTexture wood grain (`woodTexture()` + `woodMat()` MeshStandardMaterial) on desks/tables/shelves, floor speckle + vignette in `buildFloor`, warm sun-patch plane, 70 drifting dust motes (additive Points, mobile-cheap).
+- Avatar animation (lightweight): pivoted arms/legs (`group.userData.parts`) — walk swing, sit pose (arms forward, knees bent, slight lean), typing bob while focus+sitting, breathing idle. Name tags now show `Lv <level>` next to the name + focus timer (level already came over the WS `join` payload — no protocol change).
+- Room UI order: side tabs now Chat → Timer l'sala → 9rayti → Nes → Jaw → Dicor (panels reordered to match).
+- Cache bumps: `room3d.js?v=8`, `room.js?v=17`, `sw.js` CACHE `rayaverse-v24`.
+- Smoke test: `/tmp/room3d-test.js` (Node, stubbed THREE/DOM — NOT in the repo) constructs Room3D, runs frames, cycles all day phases, drags the camera, resets, clamps zoom, pickTile, rebuild, destroy. It caught one real bug during development (a dropped `camTarget` init) which was fixed.
+- NOTE — theme drift: this file says Ghrouba `--accent #ea580c`, but `assets/css/style.css` `:root` is actually green `#16a34a` (orange #ea580c is only for the challenges page + 3D highlights). Phase 1 did NOT retheme globally — that needs the owner's explicit OK.
+
 ## Ideas discussed, not built yet
 - Premium ("9rayaverse Pro") with codes the admin generates, paid by D17/virement (no payment gateway needed); later Konnect/Flouci.
 - Moving to Supabase + GitHub Pages (free, no PC) — would need a backend rewrite.

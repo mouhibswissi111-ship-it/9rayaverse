@@ -50,6 +50,9 @@ const THEMES = {
   pink: { floor: ['#f1d3c2', '#eccbb9'], wall: '#c97b95', wallFace: '#f4b6c8', wood: '#d9a27a', woodDark: '#b57d5a', rug: '#f7b8cf', rugEdge: '#ef8fb1', sofa: '#f28fb0', plant: '#5fbf80', light: '#fff1b8', dark: 0.04 },
 };
 const THEME_NAMES = { library: '📚 Maktba (lil)', cafe: '☕ 9ahwa', forest: '🌲 Ghaba', pink: '🌸 Bit Wardi' };
+// Jaw nhar/lil fel 3D (room3d.js): yet7afedh fel store 'dayphase'.
+const DAY_PHASES = ['auto', 'sbe7', 'nhar', '3chiya', 'lil'];
+const DAY_LABELS = { auto: '🌞 Auto', sbe7: '🌅 Sbe7', nhar: '☀️ Nhar', '3chiya': '🌇 3chiya', lil: '🌙 Lil' };
 const EMOTES = ['👋', '👍', '🔥', '☕', '🎉', '😴', '💯', '❤️'];
 const EMOJI_FONT = '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
 
@@ -1069,6 +1072,7 @@ function setupEditor() {
 
 function setEditMode(on) {
   editor.on = on;
+  if (view3d) view3d.orbitEnabled = !on; // ki Mode Dicor ma7loul, drag ma ydawwarch l'caméra (click y7ott dicor)
   $('#stage').classList.toggle('editing', on);
   const t = $('#edit-toggle');
   if (t) t.checked = on;
@@ -1118,6 +1122,11 @@ function setupView() {
   }
   $('#view-toggle').textContent = view3d ? '🗺️ 2D' : '🧊 3D';
   $('#zoom-in').hidden = $('#zoom-out').hidden = !view3d;
+  const dp = $('#dayphase-btn');
+  const cb = $('#cam-btn');
+  if (dp) dp.hidden = !view3d;
+  if (cb) cb.hidden = !view3d;
+  if (dp) dp.textContent = DAY_LABELS[store.get('dayphase', 'auto')] || DAY_LABELS.auto;
 }
 
 async function openRoomPicker() {
@@ -1144,6 +1153,17 @@ function setupRoomControls() {
   $('#room-switch').addEventListener('click', openRoomPicker);
   $('#zoom-in').addEventListener('click', () => view3d?.setZoom(view3d.zoom * 0.8));
   $('#zoom-out').addEventListener('click', () => view3d?.setZoom(view3d.zoom * 1.25));
+  // Jaw nhar/lil + caméra: yet7afedhou fel navigateur (store).
+  const dpBtn = $('#dayphase-btn');
+  const setDpLabel = () => { if (dpBtn) dpBtn.textContent = DAY_LABELS[store.get('dayphase', 'auto')] || DAY_LABELS.auto; };
+  dpBtn?.addEventListener('click', () => {
+    const cur = DAY_PHASES.indexOf(store.get('dayphase', 'auto'));
+    const next = DAY_PHASES[(cur + 1) % DAY_PHASES.length];
+    view3d?.setDayPhase(next);
+    setDpLabel();
+    toast(`Jaw l'sala: ${DAY_LABELS[next]}`, 'good');
+  });
+  $('#cam-btn')?.addEventListener('click', () => { view3d?.resetCamera(); toast('Caméra raj3et l blassetha 🎥', 'good'); });
   $('#fullscreen').addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else $('#stage').requestFullscreen?.().catch(() => toast('Plein écran mouch mawjoud fel navigateur hedha.', 'info'));

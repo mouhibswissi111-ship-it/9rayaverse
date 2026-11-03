@@ -5,7 +5,7 @@ Dar 9raya virtuelle lel twensa: n9raw m3a ba3dhna, nerb7ou XP, w n9atlou l'kasla
 - ⏱️ **Session 9raya** b timer, **mode sarem** (kima Flip) w tartib (kima YPT)
 - 📚 **Missions PDF**: habbat les cours mte3ek w 7ott objectif
 - ⚔️ **Tahadiyet + chorout**: elli ya9ra akther yerba7, elli yakhser ya3mel chart
-- 🏰 **Salat virtuelles** b avatars chibi, chat "9rib", timer mechtarek, lo-fi (kima Gather / Studyverse / Lilo)
+- 🏰 **Salat virtuelles** b avatars chibi, chat "9rib", timer mechtarek, lo-fi (kima Gather / Studyverse / Lilo) — 3D mtawra: jaw nhar/lil, caméra tdour (orbit), avatars yet7arkou (mechya, 93ad, kteba)
 - 🔐 **Salat privées** b code, w dicor tzayyenha kima t7eb
 - 🐉 **RPG**: XP, niveaux, flous, ghilen, hanout (kima Habitica)
 - 🛠️ **Admin général**, 📲 **ytsobb kima app** (PWA)

@@ -16,6 +16,20 @@ class Room3D {
     this.rows = this.map.length;
     this.zoom = Number(store.get('zoom3d', 10));
     this.camTarget = new THREE.Vector3(this.cols / 2, 0.5, this.rows / 2);
+    this.yaw = Number(store.get('camYaw', 0));
+    this.yawTarget = this.yaw;
+    // Jaw nhar/lil: 'auto' (7asb se3a l'PC) walla wa7ed mel presets.
+    // Yet7afedh fel navigateur (store 'dayphase').
+    this.dayPhase = store.get('dayphase', 'auto');
+    this.orbitEnabled = true; // yettsakker ki Mode Dicor ma7loul (room.js)
+    this._dragged = false;
+    this._dragDist = 0;
+    this._suppressClick = false;
+    this._pointers = new Map();
+    this._pinchDist = 0;
+    this._lastT = 0;
+    this.lightCur = null;
+    this.lightTarget = null;
     this.chars = new Map();   // player id -> { group, key, yaw, tag, ring }
     this.hover = null;
 
@@ -58,10 +72,160 @@ class Room3D {
     this.highlight.visible = false;
     this.scene.add(this.highlight);
 
+    // Ba93a chams dafya 3al 9a3a (tetbadel m3a jaw nhar/lil).
+    this.sunPatch = new THREE.Mesh(
+      new THREE.PlaneGeometry(this.cols * 0.55, this.rows * 0.55),
+      new THREE.MeshBasicMaterial({ color: 0xffcf9a, transparent: true, opacity: 0.07, depthWrite: false })
+    );
+    this.sunPatch.rotation.x = -Math.PI / 2;
+    this.sunPatch.position.set(this.cols * 0.62, 0.012, this.rows * 0.3);
+    this.scene.add(this.sunPatch);
+
+    // Ghabra t3oum fel jaw (Lilo-style): 70 no9ta, 5afifa 3al mobile.
+    this.dust = this.makeDust();
+    this.scene.add(this.dust);
+
     this.build(opts.theme, opts.themeName, opts.decor);
     this.resize();
     new ResizeObserver(() => this.resize()).observe(stage);
     this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.setZoom(this.zoom * (e.deltaY > 0 ? 1.12 : 0.89)); }, { passive: false });
+    this.setupOrbit();
+  }
+
+  // ---------- jaw nhar / lil ----------
+  static DAY_PHASES = {
+    sbe7: { sun: '#ffd9a0', sunI: 0.95, hemi: 0.9, bg: '#ffe9c9', fog: '#f6e3d2', patch: 0.1, sunY: 14 },
+    nhar: { sun: '#fff4e6', sunI: 0.85, hemi: 0.95, bg: '#fde8d6', fog: '#f6e3d2', patch: 0.07, sunY: 18 },
+    '3chiya': { sun: '#ff9a3c', sunI: 1.05, hemi: 0.8, bg: '#ffd9b0', fog: '#f2c9a0', patch: 0.16, sunY: 9 },
+    lil: { sun: '#ffd9a8', sunI: 0.55, hemi: 0.75, bg: '#2a2036', fog: '#211b31', patch: 0.03, sunY: 16 },
+  };
+
+  /** Phase li 5adem tawa: preset, walla 7asb se3a ken 'auto'. */
+  resolvePhase() {
+    if (this.dayPhase !== 'auto') return this.dayPhase;
+    const h = new Date().getHours();
+    if (h >= 6 && h < 9) return 'sbe7';
+    if (h >= 9 && h < 17) return 'nhar';
+    if (h >= 17 && h < 19) return '3chiya';
+    return 'lil';
+  }
+
+  setDayPhase(mode) {
+    this.dayPhase = mode;
+    store.set('dayphase', mode);
+    this.applyLighting(false);
+    return this.resolvePhase();
+  }
+
+  /** 7seb l'éclairage cible (theme + phase), w snappi ken awwel marra. */
+  applyLighting(snap) {
+    const ph = Room3D.DAY_PHASES[this.resolvePhase()];
+    const night = this.theme.dark > 0.3 ? 0.5 : 0; // themes lil (maktba/9ahwa/ghaba) yeb9aw moody
+    const target = {
+      sunI: ph.sunI * (1 - night * 0.25),
+      hemi: ph.hemi * (1 - night * 0.15),
+      sunColor: new THREE.Color(ph.sun),
+      bg: new THREE.Color(ph.bg).lerp(new THREE.Color('#241a30'), night * 0.45),
+      fog: new THREE.Color(ph.fog).lerp(new THREE.Color('#1d1526'), night * 0.45),
+      patch: ph.patch,
+      sunY: ph.sunY,
+    };
+    this.lightTarget = target;
+    if (snap || !this.lightCur) {
+      this.lightCur = {
+        sunI: target.sunI, hemi: target.hemi,
+        sunColor: target.sunColor.clone(), bg: target.bg.clone(), fog: target.fog.clone(),
+        patch: target.patch, sunY: target.sunY,
+      };
+      this.pushLighting();
+    }
+  }
+
+  /** Appliqui l'éclairage l'7ali 3al scene (yetnada kol frame bch l'transition tkoun smooth). */
+  pushLighting() {
+    const c = this.lightCur;
+    if (!c) return;
+    this.sun.intensity = c.sunI;
+    this.sun.color.copy(c.sunColor);
+    this.hemi.intensity = c.hemi;
+    this.scene.background.copy(c.bg);
+    this.scene.fog.color.copy(c.fog);
+    this.sunPatch.material.opacity = c.patch;
+  }
+
+  // ---------- caméra orbit ----------
+  setupOrbit() {
+    const c = this.canvas;
+    c.addEventListener('pointerdown', (e) => {
+      this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this._pointers.size === 2) {
+        const [a, b] = [...this._pointers.values()];
+        this._pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      this._dragged = false;
+      this._dragDist = 0;
+      c.classList.add('dragging');
+      try { c.setPointerCapture(e.pointerId); } catch { /* mouch mawjoud */ }
+    });
+    c.addEventListener('pointermove', (e) => {
+      if (!this._pointers.has(e.pointerId)) return;
+      const prev = this._pointers.get(e.pointerId);
+      const dx = e.clientX - prev.x;
+      const dy = e.clientY - prev.y;
+      this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      this._dragDist += Math.abs(dx) + Math.abs(dy);
+      if (this._dragDist > 8) this._dragged = true;
+      if (this._pointers.size === 2) {
+        const [a, b] = [...this._pointers.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (this._pinchDist > 0 && d > 0) this.setZoom(this.zoom * (this._pinchDist / d));
+        this._pinchDist = d;
+        return;
+      }
+      if (!this.orbitEnabled) return;
+      // Drag bch tdour l'caméra (yaw bark, pitch yetbadel m3a zoom kima 9bal).
+      this.yawTarget = Math.max(-0.85, Math.min(0.85, this.yawTarget - dx * 0.005));
+    });
+    const endPointer = (e) => {
+      if (this._pointers.has(e.pointerId)) this._pointers.delete(e.pointerId);
+      if (this._pointers.size === 0) {
+        c.classList.remove('dragging');
+        if (this._dragged) this._suppressClick = true; // ma t7ottech dicor ki kont tdour
+        store.set('camYaw', Number(this.yaw.toFixed(3)));
+      }
+    };
+    c.addEventListener('pointerup', endPointer);
+    c.addEventListener('pointercancel', endPointer);
+    // Click li ba3d drag yettsakker (bech ma y7ottech dicor bel ghalta).
+    c.addEventListener('click', (e) => {
+      if (this._suppressClick) { e.stopPropagation(); e.preventDefault(); this._suppressClick = false; }
+    }, true);
+    c.addEventListener('dblclick', () => this.resetCamera());
+  }
+
+  resetCamera() {
+    this.yawTarget = 0;
+    this.setZoom(10);
+    store.set('camYaw', 0);
+  }
+
+  makeDust() {
+    const n = 70;
+    const pos = new Float32Array(n * 3);
+    this._dustBase = [];
+    for (let i = 0; i < n; i++) {
+      const x = Math.random() * this.cols;
+      const y = 0.2 + Math.random() * 2;
+      const z = Math.random() * this.rows;
+      pos.set([x, y, z], i * 3);
+      this._dustBase.push({ x, y, z, s: 0.02 + Math.random() * 0.05, ph: Math.random() * Math.PI * 2 });
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    return new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0xffe0b0, size: 0.07, transparent: true, opacity: 0.4,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
   }
 
   static supported() {
@@ -101,6 +265,49 @@ class Room3D {
     parent.add(m);
     return m;
   }
+  woodTexture() {
+    if (this._woodTex) return this._woodTex;
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = '#8a6a48';
+    g.fillRect(0, 0, 256, 256);
+    // 5ouyout l'5achab: lignes horizontales b alpha yetbadel
+    for (let i = 0; i < 26; i++) {
+      const y = Math.random() * 256;
+      g.strokeStyle = `rgba(${60 + Math.random() * 40 | 0},${35 + Math.random() * 25 | 0},20,${0.12 + Math.random() * 0.22})`;
+      g.lineWidth = 1 + Math.random() * 2.5;
+      g.beginPath();
+      g.moveTo(0, y);
+      g.bezierCurveTo(80, y + (Math.random() * 6 - 3), 170, y + (Math.random() * 6 - 3), 256, y);
+      g.stroke();
+    }
+    // 3o9ad l'5achab
+    for (let i = 0; i < 3; i++) {
+      const x = Math.random() * 256, y = Math.random() * 256;
+      g.strokeStyle = 'rgba(50,30,15,.35)';
+      g.lineWidth = 1.5;
+      g.beginPath(); g.ellipse(x, y, 10, 5, 0, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.ellipse(x, y, 4, 2, 0, 0, Math.PI * 2); g.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.encoding = THREE.sRGBEncoding;
+    this._woodTex = tex;
+    return tex;
+  }
+  /** Matériau 5achab (Standard, roughness 0.75): yetsta3mel lel bureaux / tables / biblio. */
+  woodMat() {
+    if (this._woodMat) return this._woodMat;
+    this._woodMat = new THREE.MeshStandardMaterial({ map: this.woodTexture(), roughness: 0.75, metalness: 0 });
+    return this._woodMat;
+  }
+  std(color, rough = 0.85) {
+    const key = `std:${color}:${rough}`;
+    this.mats = this.mats || new Map();
+    if (!this.mats.has(key)) this.mats.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }));
+    return this.mats.get(key);
+  }
   emojiTexture(text, size = 128) {
     this.emojiCache = this.emojiCache || new Map();
     if (this.emojiCache.has(text)) return this.emojiCache.get(text);
@@ -131,14 +338,8 @@ class Room3D {
     this.theme = theme;
     this.themeName = themeName;
     for (const c of [...this.staticGroup.children]) this.staticGroup.remove(c);
-    const night = theme.dark > 0.3;
-    this.scene.background = new THREE.Color(night ? '#2a2036' : '#fde8d6');
-    this.scene.fog.color.set(night ? '#211b31' : '#f6e3d2');
-    this.scene.fog.near = night ? 20 : 26;
-    this.scene.fog.far = 58;
-    this.hemi.intensity = night ? 0.75 : 0.9;
-    this.sun.intensity = night ? 0.55 : 0.8;
-    this.sun.color.set(night ? '#ffd9a8' : '#fff4e6');
+    const night = theme.dark > 0.3; // themes lil (maktba/9ahwa/ghaba): lampes + glow a9wa
+    this.applyLighting(!this.lightCur);
 
     this.buildFloor(theme, decor);
 
@@ -165,11 +366,11 @@ class Room3D {
               this.cyl(0.08, 0.1, 0.7, woodDark, cx, 0.35, cz);
               this.ball(0.45, r > 0.5 ? '#2f7a45' : '#3a8f52', cx, 1.0, cz);
             } else if (themeName === 'cafe') {
-              this.box(1, 0.95, 0.8, wood, cx, 0.475, cz);
+              this.box(1, 0.95, 0.8, wood, cx, 0.475, cz).material = this.woodMat();
               this.box(1.02, 0.06, 0.86, woodDark, cx, 0.98, cz);
               if (x % 2) { this.cyl(0.07, 0.06, 0.12, '#fff7ef', cx, 1.07, cz); this.cyl(0.055, 0.055, 0.01, '#6b3e26', cx, 1.135, cz); }
             } else {
-              this.box(1, 1.5, 0.45, woodDark, cx, 0.75, cz - 0.2);
+              this.box(1, 1.5, 0.45, woodDark, cx, 0.75, cz - 0.2).material = this.woodMat();
               const colors = ['#e57373', '#64b5f6', '#81c784', '#ffd54f', '#ba68c8', '#4dd0e1'];
               for (let shelf = 0; shelf < 3; shelf++) {
                 for (let i = 0; i < 5; i++) {
@@ -182,7 +383,7 @@ class Room3D {
           case 'D':
           case 'T': {
             const top = c === 'D' ? 0.62 : 0.55;
-            this.box(1.001, 0.07, c === 'D' ? 0.8 : 1.001, wood, cx, top, cz - (c === 'D' ? 0.05 : 0));
+            this.box(1.001, 0.07, c === 'D' ? 0.8 : 1.001, wood, cx, top, cz - (c === 'D' ? 0.05 : 0)).material = this.woodMat();
             const legs = (dx, dz) => this.box(0.07, top, 0.07, woodDark, cx + dx, top / 2, cz + dz);
             if (this.tileAt(x - 1, y) !== c) { legs(-0.42, -0.35); legs(-0.42, 0.3); }
             if (this.tileAt(x + 1, y) !== c) { legs(0.42, -0.35); legs(0.42, 0.3); }
@@ -303,6 +504,16 @@ class Room3D {
       const def = DECOR_BY_KEY[d.k];
       if (def?.rug) drawDecorItem(g, d, px);
     }
+    // Grain 5afif + vignette: l'9a3a ma3adch plat.
+    for (let i = 0; i < 420; i++) {
+      g.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,.045)' : 'rgba(255,255,255,.05)';
+      g.fillRect(Math.random() * c.width, Math.random() * c.height, 2, 2);
+    }
+    const vig = g.createRadialGradient(c.width / 2, c.height / 2, Math.min(c.width, c.height) * 0.35, c.width / 2, c.height / 2, Math.max(c.width, c.height) * 0.72);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,.09)');
+    g.fillStyle = vig;
+    g.fillRect(0, 0, c.width, c.height);
     if (typeof ZONES !== 'undefined') {
       g.font = `700 ${px * 0.42}px Poppins, Inter, "Segoe UI Emoji", sans-serif`;
       g.textAlign = 'center';
@@ -339,12 +550,25 @@ class Room3D {
       return m;
     };
 
-    // body + feet
-    add(new THREE.CapsuleGeometry(0.22, 0.2, 6, 14), outfit, 0, 0.4, 0);
-    add(new THREE.SphereGeometry(0.09, 10, 8), new THREE.Color(outfit).multiplyScalar(0.6).getStyle(), -0.1, 0.07, 0.05);
-    add(new THREE.SphereGeometry(0.09, 10, 8), new THREE.Color(outfit).multiplyScalar(0.6).getStyle(), 0.1, 0.07, 0.05);
-    add(new THREE.SphereGeometry(0.08, 10, 8), skin, -0.27, 0.42, 0.02);
-    add(new THREE.SphereGeometry(0.08, 10, 8), skin, 0.27, 0.42, 0.02);
+    // body + bras + rjoul (pivots bch l'animation tkoun s7i7a: mechya, 93ad, kteba)
+    const parts = {};
+    const limb = (geo, color, px, py, pz, ox, oy, oz) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(px, py, pz);
+      const m = new THREE.Mesh(geo, toon(color));
+      m.position.set(ox, oy, oz);
+      m.castShadow = true;
+      pivot.add(m);
+      g.add(pivot);
+      return pivot;
+    };
+    parts.body = add(new THREE.CapsuleGeometry(0.22, 0.2, 6, 14), outfit, 0, 0.4, 0);
+    parts.armL = limb(new THREE.SphereGeometry(0.08, 10, 8), skin, -0.27, 0.55, 0.02, 0, -0.13, 0);
+    parts.armR = limb(new THREE.SphereGeometry(0.08, 10, 8), skin, 0.27, 0.55, 0.02, 0, -0.13, 0);
+    const legColor = new THREE.Color(outfit).multiplyScalar(0.6).getStyle();
+    parts.legL = limb(new THREE.SphereGeometry(0.09, 10, 8), legColor, -0.1, 0.2, 0.05, 0, -0.12, 0);
+    parts.legR = limb(new THREE.SphereGeometry(0.09, 10, 8), legColor, 0.1, 0.2, 0.05, 0, -0.12, 0);
+    g.userData.parts = parts;
 
     const headY = 0.98;
     const photo = look.mode === 'photo' && p.photo;
@@ -353,8 +577,9 @@ class Room3D {
       s.scale.set(0.8, 0.8, 1);
       s.position.set(0, headY, 0);
       g.add(s);
+      parts.head = s;
     } else {
-      add(new THREE.SphereGeometry(0.36, 24, 18), skin, 0, headY, 0);
+      parts.head = add(new THREE.SphereGeometry(0.36, 24, 18), skin, 0, headY, 0);
       const hair = Number(look.hair) || 0;
       const cap = (r = 0.385, len = 0.5) => add(new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, Math.PI * len), hairC, 0, headY, -0.02, [-0.35, 0, 0]);
       if (hair === 4) {
@@ -456,7 +681,7 @@ class Room3D {
         tag.className = 'tag3d';
         tag.innerHTML = '<div class="emo"></div><div class="bub" hidden></div><div class="nm"></div>';
         this.overlay.appendChild(tag);
-        c = { group, key, yaw: 0, tag };
+        c = { group, key, yaw: 0, tag, parts: group.userData.parts || null };
         this.chars.set(p.id, c);
       }
     }
@@ -465,6 +690,36 @@ class Room3D {
   // ---------- per frame ----------
   frame(players, me, t, opts = {}) {
     this.syncCharacters(players);
+    const dt = this._lastT ? Math.min(0.1, (t - this._lastT) / 1000) : 0.016;
+    this._lastT = t;
+
+    // Transition jaw (nhar/lil) smooth, w yaw l'caméra smooth.
+    if (this.lightTarget && this.lightCur) {
+      const k = 0.04;
+      this.lightCur.sunI += (this.lightTarget.sunI - this.lightCur.sunI) * k;
+      this.lightCur.hemi += (this.lightTarget.hemi - this.lightCur.hemi) * k;
+      this.lightCur.patch += (this.lightTarget.patch - this.lightCur.patch) * k;
+      this.lightCur.sunY += (this.lightTarget.sunY - this.lightCur.sunY) * k;
+      this.lightCur.sunColor.lerp(this.lightTarget.sunColor, k);
+      this.lightCur.bg.lerp(this.lightTarget.bg, k);
+      this.lightCur.fog.lerp(this.lightTarget.fog, k);
+      this.pushLighting();
+      this.sun.position.y = this.lightCur.sunY;
+    }
+    this.yaw += (this.yawTarget - this.yaw) * 0.12;
+
+    // Ghabra t3oum: thabbet louta bchwaya w tarja3 l'fou9.
+    if (this.dust) {
+      const pos = this.dust.geometry.attributes.position;
+      for (let i = 0; i < this._dustBase.length; i++) {
+        const d = this._dustBase[i];
+        d.y -= d.s * dt;
+        if (d.y < 0.15) d.y = 2.2;
+        pos.setXYZ(i, d.x + Math.sin(t / 3000 + d.ph) * 0.15, d.y, d.z + Math.cos(t / 3600 + d.ph) * 0.12);
+      }
+      pos.needsUpdate = true;
+    }
+
     const yawFor = { down: 0, up: Math.PI, left: -Math.PI / 2, right: Math.PI / 2 };
     for (const p of players.values()) {
       const c = this.chars.get(p.id);
@@ -478,15 +733,35 @@ class Room3D {
       while (d < -Math.PI) d += Math.PI * 2;
       c.yaw += d * 0.2;
       c.group.rotation.y = c.yaw;
+      c.group.rotation.x = p.sit ? 0.07 : 0; // ymil l'9oddem chwaya ki ye93od
+      // Animations 5afifa: mechya, 93ad, kteba ki focus.
+      const parts = c.parts;
+      if (parts) {
+        const moving = p.moving && !p.sit;
+        const focusing = p.status?.state === 'focus';
+        const swing = moving ? Math.sin(t / 110) * 0.55 : 0;
+        const type = focusing && p.sit ? Math.sin(t / 130) * 0.07 : 0;
+        parts.armL.rotation.x = p.sit ? -1.05 + type : swing;
+        parts.armR.rotation.x = p.sit ? -1.05 - type : -swing;
+        parts.legL.rotation.x = p.sit ? -0.9 : -swing * 0.8;
+        parts.legR.rotation.x = p.sit ? -0.9 : swing * 0.8;
+        const breathe = 1 + Math.sin(t / 700 + (typeof p.id === 'string' ? p.id.charCodeAt(0) : 0)) * 0.012;
+        parts.body.scale.y = breathe;
+      }
       const ring = c.group.userData.ring;
       ring.visible = p.status?.state === 'focus';
       if (ring.visible) ring.material.opacity = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t / 300));
     }
 
-    // camera follows me
+    // camera follows me (orbit yaw + pitch 7asb zoom)
     if (me) this.camTarget.lerp(new THREE.Vector3(me.x / this.tilePx, 0.5, me.y / this.tilePx), 0.12);
     const pitch = 1.0 + Math.min(0.25, (this.zoom - 4) * 0.012); // a bit more top-down when zoomed out
-    this.camera.position.set(this.camTarget.x, this.camTarget.y + Math.sin(pitch) * this.zoom, this.camTarget.z + Math.cos(pitch) * this.zoom);
+    const ch = Math.cos(pitch);
+    this.camera.position.set(
+      this.camTarget.x + Math.sin(this.yaw) * ch * this.zoom,
+      this.camTarget.y + Math.sin(pitch) * this.zoom,
+      this.camTarget.z + Math.cos(this.yaw) * ch * this.zoom
+    );
     this.camera.lookAt(this.camTarget);
 
     this.renderer.render(this.scene, this.camera);
@@ -507,7 +782,8 @@ class Room3D {
       const near = me && p !== me && Math.hypot(p.x - me.x, p.y - me.y) <= (opts.near || 160);
       const studying = p.status?.state === 'focus';
       const timer = studying ? ` <span class="t">⏱ ${fmtClock((p.status.until - opts.now) / 1000)}</span>` : p.status?.state === 'break' ? ' <span class="t">☕</span>' : '';
-      const html = `<b>${esc(p.name)}</b>${timer}`;
+      const lv = p.level ? ` <span class="lv">Lv ${p.level}</span>` : '';
+      const html = `<b>${esc(p.name)}</b>${lv}${timer}`;
       const nm = c.tag.querySelector('.nm');
       if (nm.innerHTML !== html) nm.innerHTML = html;
       c.tag.classList.toggle('me', p === me);
@@ -562,6 +838,10 @@ class Room3D {
   }
 
   destroy() {
+    this.dust?.geometry.dispose?.();
+    this.dust?.material.dispose?.();
+    this.sunPatch?.geometry.dispose?.();
+    this.sunPatch?.material.dispose?.();
     this.renderer.dispose();
     this.canvas.remove();
     this.overlay.remove();

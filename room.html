@@ -44,6 +44,8 @@
       <div class="stage-ctrl">
         <button id="zoom-in" title="Zoom (+)">＋</button>
         <button id="zoom-out" title="Zoom (−)">－</button>
+        <button id="dayphase-btn" class="txt" title="Baddel jaw: nhar / lil">🌞 Auto</button>
+        <button id="cam-btn" class="txt" title="Rajja3 l'caméra l blassetha">🎥 Cam</button>
         <button id="fullscreen" title="Plein écran">⛶</button>
         <button id="view-toggle" class="txt" title="Baddel 3D / 2D">🗺️ 2D</button>
       </div>
@@ -67,9 +69,9 @@
     <aside class="side">
       <nav class="tabs" id="side-tabs">
         <button data-side="chat" class="active">💬 Chat</button>
-        <button data-side="people">👥 Nes</button>
         <button data-side="timer">🍅 Timer l'sala</button>
         <button data-side="focus">⏱️ 9rayti</button>
+        <button data-side="people">👥 Nes</button>
         <button data-side="vibes">🎧 Jaw</button>
         <button data-side="decor" id="decor-tab" hidden>🎨 Dicor</button>
       </nav>
@@ -91,11 +93,6 @@
         </form>
       </section>
 
-      <section class="side-panel" data-sidepanel="people" hidden>
-        <p class="hint">📍 = 9rib menek w yesma3 l'chat mta3 "9rib". Sallem 3la s7abek walla zidhom lel jme3a mte3ek 💕</p>
-        <div id="people" class="pcards"></div>
-      </section>
-
       <section class="side-panel" data-sidepanel="timer" hidden>
         <div class="room-timer" id="room-timer"></div>
         <div class="card" style="padding:14px">
@@ -111,6 +108,11 @@
 
       <section class="side-panel" data-sidepanel="focus" hidden>
         <div id="room-focus"></div>
+      </section>
+
+      <section class="side-panel" data-sidepanel="people" hidden>
+        <p class="hint">📍 = 9rib menek w yesma3 l'chat mta3 "9rib". Sallem 3la s7abek walla zidhom lel jme3a mte3ek 💕</p>
+        <div id="people" class="pcards"></div>
       </section>
 
       <section class="side-panel" data-sidepanel="vibes" hidden>
@@ -129,7 +131,7 @@
   <script src="assets/js/ambience.js?v=17"></script>
   <!-- 3D view (falls back to 2D automatically if this can't load) -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-  <script src="assets/js/room3d.js?v=7"></script>
-  <script src="assets/js/room.js?v=16"></script>
+  <script src="assets/js/room3d.js?v=8"></script>
+  <script src="assets/js/room.js?v=17"></script>
 </body>
 </html>
